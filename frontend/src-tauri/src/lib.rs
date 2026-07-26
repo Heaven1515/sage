@@ -181,9 +181,10 @@ pub fn run() {
             // Espera a que la app esté estable antes de consultar GitHub Releases.
             // Si hay versión nueva, muestra un diálogo nativo preguntando si actualizar.
             let app_updater = app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                tokio::time::sleep(std::time::Duration::from_secs(20)).await;
-
+            std::thread::spawn(move || {
+                // Espera 20 s para que la app esté estable antes de consultar GitHub
+                std::thread::sleep(std::time::Duration::from_secs(20));
+                tauri::async_runtime::spawn(async move {
                 use tauri_plugin_updater::UpdaterExt;
                 use tauri_plugin_dialog::DialogExt;
 
@@ -199,8 +200,6 @@ pub fn run() {
                                         version
                                     ))
                                     .title("Actualización disponible")
-                                    .ok_button_label("Actualizar")
-                                    .cancel_button_label("Después")
                                     .blocking_show();
 
                                 if confirmar {
@@ -216,6 +215,7 @@ pub fn run() {
                     }
                     Err(_) => {} // Updater no disponible — ignorar
                 }
+                });
             });
 
             Ok(())
