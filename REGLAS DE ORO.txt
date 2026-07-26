@@ -220,6 +220,45 @@ XIII. BACKEND CON --reload EN DESARROLLO — REGLA ABSOLUTA
   fixes del día. netstat mostraba un PID fantasma. Al matar el
   proceso real y reiniciar, todos los errores desaparecieron.
 
+----------------------------------------------------------------
+XIV.  CIERRE DE SESIÓN — RESPALDO Y GIT OBLIGATORIOS
+----------------------------------------------------------------
+
+  Al terminar cualquier sesión de trabajo (cambios en código
+  O en la BD de producción), SIEMPRE ejecutar estos pasos
+  ANTES de cerrar el PC o dar la tarea por terminada:
+
+  SI HUBO CAMBIOS EN EL CÓDIGO:
+
+    Paso 1 — Verificar qué cambió:
+      git status
+      git diff
+
+    Paso 2 — Subir al repositorio remoto:
+      git add .
+      git commit -m "descripción clara de lo que cambió"
+      git push
+
+    REGLA: si los cambios no están en GitHub, no están respaldados.
+    El disco local no cuenta como respaldo.
+
+  SI HUBO CAMBIOS EN LA BD DE PRODUCCIÓN (PC de oficina):
+
+    El respaldo automático corre cada 5 horas mientras SAGE
+    está abierto. Para forzar un respaldo inmediato al cerrar,
+    simplemente cierra SAGE normalmente — el respaldo habrá
+    corrido durante la jornada.
+
+    Verificar que existan archivos en:
+      G:\Mi unidad\SAGE_backups\
+
+    Si la carpeta está vacía o no existe → revisar que Google
+    Drive Desktop esté corriendo en el PC de oficina.
+
+  SEÑAL DE ALERTA: "hice cambios pero no hice git push"
+  → el código puede perderse si el disco falla esa noche.
+  Solución: git push antes de cerrar, siempre.
+
 ================================================================
 FIN DE LA CONSTITUCIÓN
 ================================================================
