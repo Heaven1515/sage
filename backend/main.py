@@ -9,12 +9,14 @@ Para correr:
 import importlib
 import logging
 
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from database import Base, engine, SesionLocal
 import dashboard_routes
+import backup_service
 
 # ── Configuración de logs ────────────────────────────────────────────────────
 logging.basicConfig(
@@ -23,11 +25,21 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+
+# ── Ciclo de vida: arranque y cierre ─────────────────────────────────────────
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    backup_service.iniciar(retraso_segundos=60)
+    yield
+    backup_service.detener()
+
+
 # ── Aplicación FastAPI ───────────────────────────────────────────────────────
 app = FastAPI(
     title="Notaría 33 — Alzamientos BDC",
     version="1.0.0",
     description="Sistema de gestión notarial modular.",
+    lifespan=lifespan,
 )
 
 # ── CORS: permite peticiones desde el frontend (dev y app de escritorio) ─────
