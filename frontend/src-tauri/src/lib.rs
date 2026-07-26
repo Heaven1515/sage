@@ -91,6 +91,9 @@ fn matar_backend_anterior() {
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_process::init())
         // GuardBackend mantiene el CommandChild vivo mientras la app corre.
         // Sin este estado, el child se dropea al salir del closure de setup.
         .manage(GuardBackend(Mutex::new(None)))
@@ -171,6 +174,47 @@ pub fn run() {
                             }
                         }
                     }
+                }
+            });
+
+            // Revisor de actualizaciones: corre en segundo plano 20 s después del arranque.
+            // Espera a que la app esté estable antes de consultar GitHub Releases.
+            // Si hay versión nueva, muestra un diálogo nativo preguntando si actualizar.
+            let app_updater = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_secs(20)).await;
+
+                use tauri_plugin_updater::UpdaterExt;
+                use tauri_plugin_dialog::DialogExt;
+
+                match app_updater.updater() {
+                    Ok(updater) => {
+                        match updater.check().await {
+                            Ok(Some(update)) => {
+                                let version = update.version.clone();
+                                let confirmar = app_updater
+                                    .dialog()
+                                    .message(format!(
+                                        "Hay una nueva versión de SAGE disponible (v{}).\n¿Deseas actualizar ahora?",
+                                        version
+                                    ))
+                                    .title("Actualización disponible")
+                                    .ok_button_label("Actualizar")
+                                    .cancel_button_label("Después")
+                                    .blocking_show();
+
+                                if confirmar {
+                                    let _ = update
+                                        .download_and_install(|_, _| {}, || {})
+                                        .await;
+                                    app_updater.restart();
+                                }
+                            }
+                            Ok(None) => {} // Sin actualizaciones — no hacer nada
+                            Err(_) => {}   // Sin conexión o error de red — ignorar silenciosamente
+                        }
+                    }
+                    Err(_) => {} // Updater no disponible — ignorar
                 }
             });
 

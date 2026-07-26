@@ -1,0 +1,82 @@
+name: Release SAGE
+
+# Se activa cuando subes un tag con formato v1.2.3
+# Ejemplo: git tag v5.0.1 && git push origin v5.0.1
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+
+    steps:
+      # ── 1. Descargar el código ──────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Configurar Python ───────────────────────────────────────────────
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Instalar dependencias Python
+        run: |
+          cd backend
+          pip install -r requirements.txt
+          pip install pyinstaller
+
+      # ── 3. Compilar backend Python → backend.exe ───────────────────────────
+      - name: Compilar backend con PyInstaller
+        run: |
+          cd backend
+          pyinstaller sage_backend.spec --clean
+
+      - name: Copiar backend.exe a binarios de Tauri
+        run: |
+          copy backend\dist\backend.exe frontend\src-tauri\binaries\backend-x86_64-pc-windows-msvc.exe
+
+      # ── 4. Configurar Node.js + pnpm ───────────────────────────────────────
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Instalar pnpm
+        run: npm install -g pnpm
+
+      - name: Instalar dependencias frontend
+        run: |
+          cd frontend
+          pnpm install
+
+      # ── 5. Configurar Rust ─────────────────────────────────────────────────
+      - name: Configurar Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            frontend/src-tauri/target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('frontend/src-tauri/Cargo.lock') }}
+
+      # ── 6. Construir y publicar con Tauri ──────────────────────────────────
+      - name: Build y Release Tauri
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+          TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+        with:
+          projectPath: frontend
+          tagName: ${{ github.ref_name }}
+          releaseName: 'SAGE v__VERSION__'
+          releaseBody: 'Nueva versión de SAGE. Descarga el instalador y ejecuta para actualizar.'
+          releaseDraft: false
+          prerelease: false
+          updaterJsonPreferNsis: true
