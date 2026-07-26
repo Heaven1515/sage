@@ -1,0 +1,723 @@
+================================================================
+CONTEXTO DE SESIÓN — NOTARÍA 33 · ALZAMIENTOS BDC
+================================================================
+Fecha última actualización: 2026-04-07
+================================================================
+
+QUIÉN SOY
+---------
+Javie Espina. Trabajo sola en la 33ª Notaría de Santiago procesando
+alzamientos del Banco de Chile. Estoy construyendo desde cero un sistema
+de gestión notarial modular que reemplaza un monolito de 6.000 líneas.
+
+REGLAS DEL PROYECTO
+-------------------
+Leer obligatoriamente antes de generar código:
+  C:\Users\javie\OneDrive\Desktop\SAGE\REGLAS DE ORO.txt
+(Contiene stack, estructura de carpetas, los 10 mandamientos
+y convenciones de código. Todo el código debe seguirlas.)
+
+STACK
+-----
+Frontend : Next.js 16 + React 19 + TypeScript + Tailwind CSS 4
+Backend  : FastAPI + SQLAlchemy + SQLite + Pydantic + python-docx + num2words
+Idioma   : Todo en español (props de librerías en inglés)
+Repo     : Monorepo en C:\Users\javie\OneDrive\Desktop\OuterHeaven\SAGE\
+
+CÓMO LEVANTAR EL PROYECTO (PowerShell, dos ventanas)
+------------------------------------------------------
+
+PASO 0 — Matar procesos Python viejos SIEMPRE antes de arrancar:
+  powershell -Command "Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force"
+
+Backend (CON --reload OBLIGATORIO en desarrollo):
+  cd C:\Users\javie\OneDrive\Desktop\OuterHeaven\SAGE\backend
+  python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+
+  !! SIN --reload Python carga los módulos en memoria al arrancar
+     y NUNCA refleja cambios en los .py aunque se guarden.
+     Cualquier fix hecho con el backend ya corriendo queda invisible
+     hasta reinicio. Siempre usar --reload en desarrollo.
+
+Frontend:
+  cd C:\Users\javie\OneDrive\Desktop\OuterHeaven\SAGE\frontend
+  pnpm dev
+
+Si hay procesos Python colgados (Windows):
+  powershell -Command "Get-Process python | Stop-Process -Force"
+
+Si el fix es correcto en Python directo pero falla en el navegador:
+  → El backend tiene código viejo en memoria. Reiniciar siempre primero.
+  → Verificar timestamp: C:\Users\javie\AppData\Roaming\SAGE\backend.log
+    línea "Backend SAGE iniciando" — si es viejo, reiniciar.
+
+URL principal: http://localhost:3000
+
+NOTA IMPORTANTE — CACHE DE NEXT.JS EN ONEDRIVE
+-----------------------------------------------
+El proyecto vive en OneDrive. Para evitar que Turbopack corrompa
+el cache al sincronizar, se creó un junction de Windows:
+  frontend\.next  →  C:\Temp\sage-next-dot-next
+
+ATENCIÓN: Para pnpm tauri build (producción) el junction debe estar
+ELIMINADO. Turbopack en builds de producción rechaza distDirRoot fuera
+del projectPath. Pasos para build:
+  1. cmd /c "rmdir C:\Users\javie\OneDrive\Desktop\OuterHeaven\SAGE\frontend\.next"
+  2. pnpm tauri build
+  3. Recrear junction para desarrollo:
+       mkdir C:\Temp\sage-next-dot-next
+       cmd /c "mklink /J \"C:\Users\javie\OneDrive\Desktop\OuterHeaven\SAGE\frontend\.next\" \"C:\Temp\sage-next-dot-next\""
+
+next.config.mjs tiene turbopack.root configurado (ruta correcta:
+C:/Users/javie/OneDrive/Desktop/OuterHeaven/SAGE/frontend).
+
+================================================================
+ESTADO ACTUAL — TODOS LOS MÓDULOS COMPLETOS
+================================================================
+
+✅ Módulo 01 — Confecciones (COMPLETO)
+✅ Módulo 02 — Registro y Toma de Repertorios (COMPLETO)
+✅ Módulo 03 — Prefirma (COMPLETO — pendiente prueba real en notaría)
+✅ Módulo 04 — Postfirma (COMPLETO)
+✅ Módulo 05 — Custodia de Documentos / Bóveda (COMPLETO)
+✅ Módulo 06 — Gestión de Cobros / Cobranza (COMPLETO)
+✅ Módulo 07 — Configuración (COMPLETO)
+✅ Módulo 08 — Informe Diario de Operaciones / Carátulas CBR (COMPLETO)
+✅ Dashboard con búsqueda global, gráfico anual y métricas (COMPLETO)
+
+================================================================
+NOMBRES CORRECTOS EN LA UI (sidebar app-shell.tsx)
+================================================================
+
+Orden del sidebar (app-shell.tsx):
+  1. Panel de Control               → /
+  2. Redacción de Escrituras        → /confecciones
+  3. Registro y Toma de Repertorios → /vb
+  4. Preparación de Firma           → /prefirma
+  5. Postfirma                      → /postfirma
+  6. Custodia de Documentos         → /boveda
+  7. Informe Diario de Operaciones  → /caratulas
+  8. Gestión de Cobros              → /cobranza  (ÚLTIMO)
+  (Configuración y Cerrar sesión en el footer del sidebar)
+
+Nombre de la notaria: Carolina Elizabeth Piña Cuevas (con Ñ, no Pina)
+Notaría: 33ª Notaría de Santiago (ª ordinal femenino, no °)
+
+================================================================
+APP DE ESCRITORIO CON TAURI — COMPLETADA ✅
+================================================================
+
+ESTADO: App construida y funcionando en producción.
+Instaladores generados en:
+  C:\Users\javie\AppData\Roaming\sage-rust-target\release\bundle\
+    msi\SAGE_1.0.0_x64_es-ES.msi
+    nsis\SAGE_1.0.0_x64-setup.exe
+
+La app se instala en: C:\Users\<USUARIO>\AppData\Local\SAGE\
+La BD de producción vive en: C:\Users\<USUARIO>\AppData\Roaming\SAGE\notaria.db
+Los logs del backend en: C:\Users\<USUARIO>\AppData\Roaming\SAGE\backend.log
+
+----------------------------------------------------------------
+CÓMO RECOMPILAR Y DISTRIBUIR
+----------------------------------------------------------------
+
+  Paso 1 — Recompilar backend (si hubo cambios en Python):
+    cd C:\Users\javie\OneDrive\Desktop\OuterHeaven\SAGE\backend
+    python -m PyInstaller sage_backend.spec
+    copy dist\backend.exe "..\frontend\src-tauri\binaries\backend-x86_64-pc-windows-msvc.exe"
+
+  Paso 2 — Eliminar junction .next (OBLIGATORIO antes del build):
+    cmd /c "rmdir C:\Users\javie\OneDrive\Desktop\OuterHeaven\SAGE\frontend\.next"
+
+  Paso 3 — Build Tauri:
+    cd C:\Users\javie\OneDrive\Desktop\OuterHeaven\SAGE\frontend
+    pnpm tauri build
+
+  Paso 4 — Recrear junction para desarrollo (después del build):
+    mkdir C:\Temp\sage-next-dot-next
+    cmd /c "mklink /J \"...\frontend\.next\" \"C:\Temp\sage-next-dot-next\""
+
+----------------------------------------------------------------
+ARQUITECTURA
+----------------------------------------------------------------
+
+  Tauri v2 envuelve el frontend Next.js (estático) como ventana
+  nativa de Windows. El backend FastAPI corre como sidecar (proceso
+  hijo) que Tauri lanza automáticamente. El usuario instala un único
+  .msi/.exe y no necesita Python, Node.js ni servidores.
+
+  frontend/out/          ← Next.js static export
+  src-tauri/binaries/
+    backend-x86_64-pc-windows-msvc.exe  ← PyInstaller bundle
+
+----------------------------------------------------------------
+CONFIGURACIÓN TAURI
+----------------------------------------------------------------
+
+  tauri.conf.json:
+    - productName: SAGE
+    - identifier: cl.notaria33.sage
+    - build.frontendDist: ../out
+    - build.devUrl: http://localhost:3000
+    - bundle.externalBin: ["binaries/backend"]
+    - Ventana: 1280x800, minWidth 1024
+
+  lib.rs (Rust):
+    - Registra tauri-plugin-shell
+    - En setup(): llama matar_backend_anterior() ANTES de lanzar sidecar
+    - matar_backend_anterior(): taskkill /F /IM backend.exe /T + sleep 500ms
+      (mata instancia colgada de sesión anterior; evita WinError 10048)
+    - Lanza sidecar backend, oculta ventana, espera healthcheck en /
+    - Muestra ventana cuando backend responde (hasta 30 seg, 300ms polling)
+
+  run_backend.py:
+    - Redirige sys.stdout y sys.stderr a StringIO si son None
+      (con console=False, son None → uvicorn falla sin esto)
+    - Pasa log_config=None a uvicorn.run() para desactivar
+      su configuración de consola
+    - Escribe log en %APPDATA%\SAGE\backend.log para diagnóstico
+
+  database.py:
+    - En modo frozen (PyInstaller): BD en %APPDATA%\SAGE\notaria.db
+    - Primera vez: copia notaria.db plantilla desde sys._MEIPASS
+    - En desarrollo: ./notaria.db (sin cambios)
+
+  sage_backend.spec:
+    - hidden imports incluyen 'multipart' y 'multipart.multipart'
+      (requerido por FastAPI para UploadFile — sin esto, subir
+      archivos falla con "Error interno al procesar el archivo")
+
+  Cargo.toml (src-tauri/):
+    - tauri = "2"
+    - tauri-plugin-shell = "2"
+
+  .cargo/config.toml (src-tauri/):
+    - target-dir = C:/Users/javie/AppData/Roaming/sage-rust-target
+      (redirige fuera de OneDrive para evitar bloqueos de Windows)
+
+----------------------------------------------------------------
+PROTOCOLO DE PUERTOS (para futuros proyectos)
+----------------------------------------------------------------
+
+  Cada app Tauri+FastAPI usa un puerto fijo ÚNICO.
+  SAGE usa el puerto 8000.
+  Proyectos futuros deben usar 8001, 8002, etc.
+  Rango recomendado: 8000–8999 (registrados, libres, no conflictan
+  con servicios del sistema).
+
+  En cada proyecto definir el puerto en:
+    - run_backend.py → constante PUERTO
+    - lib.rs → healthcheck URL
+    - hooks del frontend → base URL de la API
+
+----------------------------------------------------------------
+DETALLES TÉCNICOS DE LA CONFIGURACIÓN TAURI
+----------------------------------------------------------------
+
+  tauri.conf.json:
+    - productName: SAGE
+    - identifier: cl.notaria33.sage
+    - build.frontendDist: ../out
+    - build.devUrl: http://localhost:3000
+    - bundle.externalBin: ["binaries/backend"]
+    - Ventana: 1280x800, minWidth 1024
+
+  lib.rs (Rust):
+    - Registra tauri-plugin-shell
+    - En setup(): lanza app.shell().sidecar("backend")
+    - Tauri termina el sidecar automáticamente al cerrar la app
+
+  database.py:
+    - En modo frozen (PyInstaller): BD en %APPDATA%\SAGE\notaria.db
+    - Primera vez: copia notaria.db plantilla desde sys._MEIPASS
+    - En desarrollo: ./notaria.db (sin cambios)
+
+  Cargo.toml (src-tauri/):
+    - tauri = "2"
+    - tauri-plugin-shell = "2"
+
+  .cargo/config.toml (src-tauri/):
+    - target-dir = C:/Users/javie/AppData/Roaming/sage-rust-target
+    (redirige fuera de OneDrive para evitar bloqueos de Windows)
+
+================================================================
+CAMBIOS 2026-04-12 — FIXES MÓDULO 01 FORMATEAR
+================================================================
+
+1. FIX — Empresas con nombre ligeramente distinto en tabla vs borrador
+   PROBLEMA: La tabla del banco guardaba "ASESORIA E INVERSIONES WIBO
+   LIMITADA" pero el borrador decía "ASESORIAS..." (con S). El patrón
+   exacto no hacía match → empresa no quedaba en negrita.
+   SOLUCIÓN en formatear_utils.py (_patron_nombre_flexible):
+     Para nombres de 4+ palabras, une con \s+ (maneja dobles espacios)
+     y añade [sS]? al final de cada palabra (ASESORIA ↔ ASESORIAS).
+
+2. DIAGNÓSTICO — Backend viejo en memoria (causa de errores fantasma)
+   PROBLEMA: Todos los fixes eran correctos pero el backend llevaba
+   corriendo desde las 15:14 (8+ horas) con código viejo en memoria.
+   netstat mostraba PID fantasma (34388); el proceso real era 11256.
+   Al matar 11256 y reiniciar con --reload, todo funcionó.
+   LECCIÓN: Si el fix pasa en Python directo pero falla en el browser
+   → el backend tiene código viejo → reiniciar SIEMPRE primero.
+
+================================================================
+CAMBIOS 2026-04-07 — 5 FIXES + 1 FEATURE + NUEVO INSTALADOR
+================================================================
+
+1. FIX — SyntaxError Python 3.14 en backend del otro PC
+   PROBLEMA: `from modules.07_configuracion.model import Configuracion`
+   crasheaba con "invalid decimal literal" en Python 3.14 (el .07 era
+   parseado como float malformado).
+   SOLUCIÓN en impresion_controller.py (_leer_nombre_impresora):
+     import importlib
+     _mod = importlib.import_module("modules.07_configuracion.model")
+     Configuracion = _mod.Configuracion
+
+2. FIX — CoInitialize en hilo de impresión
+   PROBLEMA: win32com requiere CoInitialize() en cada hilo nuevo.
+   El hilo _bucle_impresion tiraba error COM (-2147221008).
+   SOLUCIÓN en impresion_controller.py:
+     - import pythoncom (agregado al top)
+     - pythoncom.CoInitialize() al inicio de _bucle_impresion
+     - pythoncom.CoUninitialize() en el finally del mismo hilo
+
+3. FIX — fecha_carga no se actualizaba al recargar Excel mismo día
+   PROBLEMA: Al cargar un Excel nuevo el mismo día, la lista VB seguía
+   mostrando actividades del Excel anterior (filtro por fecha_carga).
+   SOLUCIÓN en modules/02_vb/controller.py (cargar_escrituras):
+     existe.fecha_carga = datetime.now()  ← añadido junto con los otros campos
+
+4. FIX — Race condition: no se podía imprimir después de cancelar
+   PROBLEMA: El finally del hilo viejo (post-cancelación) sobreescribía
+   el estado del nuevo job con en_curso=False, deteniendo el polling.
+   SOLUCIÓN en impresion_controller.py:
+     - _estado["job_id"] = 0  (nuevo campo)
+     - iniciar_impresion incrementa job_id y lo pasa al hilo como mi_job_id
+     - El finally solo actualiza estado si _estado["job_id"] == mi_job_id
+
+5. FEATURE — Configuración de impresora de red (IP + nombre)
+   Campos nuevos en modules/07_configuracion: ip_impresora, nombre_impresora.
+   _leer_nombre_impresora construye ruta UNC \\IP\nombre si ambos están.
+   Configuración visible en /configuracion con dos campos nuevos.
+
+6. FIX — matar_backend_anterior() en lib.rs
+   Al iniciar SAGE, mata cualquier backend.exe colgado antes de lanzar
+   el nuevo sidecar. Evita el error "puerto 8000 en uso".
+
+================================================================
+CAMBIOS 2026-04-06 — 7 BUGS CORREGIDOS
+================================================================
+
+1. PERSISTENCIA DE TABS (confecciones/page.tsx y vb/page.tsx)
+   PROBLEMA: Al cambiar de tab la lista se vaciaba (el componente se
+   desmontaba y perdía estado).
+   SOLUCIÓN: Cambiar de renderizado condicional (? A : B) a CSS hidden
+   (className={tab !== 1 ? "hidden" : ""}). Los componentes quedan
+   montados permanentemente.
+
+2. BOTONES DE CARPETA VB MOVIDOS A TAB 1
+   PROBLEMA: Botones "Seleccionar carpeta", "Activar vigilador" y
+   "Desactivar" estaban en Tab 2 (Finalización) siendo que deberían
+   estar en Tab 1 (Vistos Buenos).
+   SOLUCIÓN: useVBCarpeta() se llama en VBPage (nivel página). El estado
+   se pasa como props a Tab 1 donde vive la nueva SeccionCarpeta.
+   Tab 2 (WordsTab) solo recibe estadoCarpeta como prop (solo lectura).
+
+3. CONFIGURACIÓN — PROPAGACIÓN REAL A TODOS LOS MÓDULOS
+   PROBLEMA: Cambios en Configuración solo eran visuales; no se
+   propagaban pre_url ni post_url a los módulos; vb_carpeta no
+   activaba configurada=True en VBCarpetaConfig.
+   SOLUCIÓN en modules/07_configuracion/controller.py:
+     - vb_carpeta → vb_carpeta_config.ruta_base Y configurada=True
+     - pre_url    → prefirma_config.url_formulario (nueva columna)
+     - post_url   → postfirma_config.url_portal (nueva columna)
+   Modelos actualizados: PrefirmaConfig.url_formulario,
+   PostfirmaConfig.url_portal. Migraciones en main.py.
+   formulario_controller.py ahora acepta url=None (usa defecto si None).
+   prefirma/controller.py pasa config.url_formulario al enviar.
+   BONUS: corregido _DEFECTOS["notaria"] de "33°" a "33ª".
+
+4. BUSCADOR GLOBAL INCLUYE BÓVEDA
+   PROBLEMA: Escrituras que solo pasaron por bóveda (sin VB) no
+   aparecían en la búsqueda global.
+   SOLUCIÓN en dashboard_routes.py: cuando vb_registro no tiene
+   resultados, hace fallback a boveda_registro por repertorio.
+   Retorna en_boveda=True con fecha y número de entrega.
+
+5. LISTA MUESTRA SOLO EXCEL ACTUAL (no toda la BD histórica)
+   PROBLEMA: Al cargar un nuevo Excel, la lista mostraba todos los
+   registros históricos de la BD.
+   SOLUCIÓN: El endpoint /subir-excel retorna wfs_excel en la respuesta.
+   El frontend usa esos datos directamente sin hacer GET adicional.
+   confirmarActividades() filtra localmente (sin fetch).
+   Afecta: confecciones (controller.py, schema.py, useConfecciones.ts)
+           vb escrituras (controller.py, schema.py, useVB.ts)
+
+6. WORD BÓVEDA SE GUARDA EN CARPETA DEL DÍA VB
+   PROBLEMA: El Word generado en bóveda solo se guardaba en Descargas.
+   SOLUCIÓN en modules/05_boveda/routes.py: después de guardar en
+   Descargas, verifica si VBCarpetaConfig tiene carpeta activa; si
+   existe, escribe también en ruta_base/Vistos Buenos de Abogados/carpeta_hoy/.
+
+7. TARJETA "BORRADORES" = SOLO DOCUMENTOS FORMATEADOS
+   PROBLEMA: La tarjeta de borradores del dashboard contaba todos los
+   WFs cargados desde el Excel (fecha_carga), no solo los formateados.
+   SOLUCIÓN:
+     - Nueva columna confecciones.fecha_formateado (DATETIME NULL).
+       Migración en main.py.
+     - formatear_controller.py devuelve (bytes, wf) en vez de solo bytes.
+     - modules/01_confecciones/routes.py: endpoint /formatear recibe db,
+       actualiza fecha_formateado = now() para el WF formateado.
+     - dashboard_controller.py cuenta por DATE(fecha_formateado)
+       en vez de DATE(fecha_carga).
+
+================================================================
+TAREAS PENDIENTES
+================================================================
+
+- PRÓXIMA TAREA: Detectar cliente (BDC vs Romero) en planilla de repertorios
+  OBJETIVO: Al cargar la planilla Excel de repertorios (Módulo 02 Tab 3),
+  identificar automáticamente si cada escritura es de "Banco de Chile" o
+  "Romero y Asociados". Esto afecta:
+    1. vb_registro.cliente_notaria → ya existe, actualmente se llena manualmente
+       o no se llena. Hay que auto-detectarlo desde la planilla.
+    2. Dashboard principal → tarjetas deben mostrar desglose BDC vs Romero
+    3. Cobranza → ya usa cliente_notaria para separar las hojas Excel.
+       Si cliente_notaria se llena automáticamente, cobranza funciona solo.
+  El campo cliente_notaria en vb_registro acepta valores "BDC" y "Romero".
+  Ver repertorios_controller.py (parsear_planilla) para entender el formato
+  de la planilla Excel del banco y dónde podría venir el dato del cliente.
+
+- Limpiar BD antes de producción real (si aún tiene datos de prueba):
+    Borrar backend/notaria.db → el backend recrea todas las tablas vacías.
+    Los históricos del gráfico (Ene=621, Feb=718, Mar=709) están
+    hardcodeados en dashboard_controller.py y NO dependen de la BD.
+
+- Módulo 03 Prefirma: pendiente prueba real con red interna de la notaría.
+
+================================================================
+ESTRUCTURA ACTUAL DEL PROYECTO
+================================================================
+
+SAGE/
+├── frontend/
+│   ├── app/
+│   │   ├── page.tsx                    ← Dashboard principal
+│   │   ├── login/page.tsx              ← Login
+│   │   ├── confecciones/page.tsx       ← Módulo 01
+│   │   ├── vb/page.tsx                 ← Módulo 02
+│   │   ├── prefirma/page.tsx           ← Módulo 03
+│   │   ├── postfirma/page.tsx          ← Módulo 04
+│   │   ├── boveda/page.tsx             ← Módulo 05
+│   │   ├── cobranza/page.tsx           ← Módulo 06
+│   │   ├── configuracion/page.tsx      ← Módulo 07
+│   │   └── caratulas/page.tsx          ← Módulo 08
+│   ├── components/
+│   │   ├── dashboard/
+│   │   │   ├── app-shell.tsx           ← Sidebar + Header (chrome único)
+│   │   │   ├── stats-section.tsx       ← Métricas diarias y mensuales
+│   │   │   ├── chart-section.tsx       ← Gráfico anual (recharts)
+│   │   │   └── BuscadorModal.tsx       ← Modal búsqueda global por repertorio
+│   │   ├── confecciones/
+│   │   ├── vb/
+│   │   ├── prefirma/
+│   │   ├── postfirma/
+│   │   ├── boveda/
+│   │   └── caratulas/
+│   └── hooks/
+│       ├── useAuth.ts
+│       ├── useDashboard.ts
+│       ├── useBuscador.ts
+│       ├── useConfecciones.ts
+│       ├── useFormatear.ts
+│       ├── useVB.ts
+│       ├── useVBCarpeta.ts
+│       ├── useVBWords.ts
+│       ├── useVBRepertorios.ts
+│       ├── useVBRegistro.ts
+│       ├── usePrefirma.ts
+│       ├── usePostfirma.ts
+│       ├── useBoveda.ts
+│       ├── useCobranza.ts
+│       └── useCaratulas.ts
+│
+└── backend/
+    ├── main.py
+    ├── database.py
+    ├── dashboard_routes.py
+    ├── dashboard_controller.py         ← _HISTORICO con Ene/Feb/Mar 2026
+    ├── seed_nombres.py
+    ├── requirements.txt
+    ├── shared/
+    │   ├── nombres_model.py
+    │   └── nombres_controller.py
+    └── modules/
+        ├── 01_confecciones/
+        ├── 02_vb/
+        ├── 03_prefirma/
+        ├── 04_postfirma/
+        ├── 05_boveda/
+        ├── 06_cobranza/
+        ├── 07_configuracion/
+        └── 08_caratulas/
+            ├── __init__.py
+            ├── model.py        ← CaratulaConfig, CaratulaLog
+            ├── schema.py
+            ├── gmail_reader.py ← LectorCorreo (IMAP, 1 query por WF)
+            ├── controller.py
+            └── routes.py
+
+================================================================
+MÓDULO 08 — INFORME DIARIO DE OPERACIONES / CARÁTULAS CBR
+================================================================
+
+PROPÓSITO:
+  Conecta al Gmail de la notaría via IMAP, extrae N° de carátula desde
+  los correos del CBR Santiago, cruza con vb_registro y genera planilla Excel.
+
+CREDENCIALES (guardadas en BD, protegidas por contraseña "notaria33"):
+  - Email y App Password de Gmail
+  - Remitente CBR: portal.conservador.noreply@conservador.cl
+  - NOTA: Migrar a Outlook en el futuro (campo proveedor="gmail"/"outlook")
+
+FLUJO:
+  1. Detecta automáticamente los WF de Santiago sin carátula (vb_registro)
+  2. Por cada WF: busca en Gmail con IMAP (FROM cbr BODY wf) — 1 query/WF
+  3. Extrae N° carátula del HTML del correo (regex entre "N° Carátula" y "Observación")
+  4. Actualiza vb_registro.numero_caratula
+  5. Guarda en caratula_log (idempotente — no duplica)
+  6. Genera Excel: WF | RUT | NOMBRE | COMUNA | N° CARÁTULA | OBSERVACIÓN
+
+ENDPOINTS:
+  GET  /caratulas/config
+  POST /caratulas/config/ver
+  PUT  /caratulas/config
+  GET  /caratulas/pendientes
+  POST /caratulas/sincronizar
+  POST /caratulas/cancelar
+  POST /caratulas/planilla
+
+================================================================
+MÓDULO 07 — CONFIGURACIÓN
+================================================================
+
+  - Login de usuarios (auth con JWT o sesión simple en BD)
+  - Gestión de usuarios (crear, editar, cambiar contraseña)
+  - Notario del día (seleccionable, se muestra en dashboard)
+  - Configuración global del sistema
+
+================================================================
+DASHBOARD — BÚSQUEDA GLOBAL
+================================================================
+
+Barra de búsqueda en el header (app-shell.tsx):
+  - Ingresa número de repertorio + Enter
+  - Abre BuscadorModal con toda la información de la escritura:
+    WF, nombre, RUT, materia, fecha, comuna, bóveda, carátula, firma electrónica
+  - Backdrop blur sobre el contenido detrás
+  - Cierra con Escape o clic fuera
+
+DATOS DEL GRÁFICO ANUAL (hardcodeados en dashboard_controller.py):
+  _HISTORICO = { 2026: {1: 621, 2: 718, 3: 709} }
+  Estos valores representan Ene/Feb/Mar 2026 antes de que existiera el sistema.
+  Cuando haya datos reales en vb_registro, tienen prioridad automáticamente.
+  IMPORTANTE: La query del gráfico filtra AND mes IS NOT NULL para evitar
+  que registros con mes=NULL (migración) rompan el GROUP BY.
+
+================================================================
+MÓDULO 01 — CONFECCIONES (COMPLETO)
+================================================================
+
+TAB 1 "Lista de Trabajo":
+  Sube Excel .xls del Banco de Chile → parsea → guarda WFs en SQLite
+  Modal con checkboxes filtra por Actividad
+  Tabla: N°, WF, Nombre Cliente, Etapa, botón Copiar WF
+
+TAB 2 "Formatear":
+  Transforma borradores .docx sin formato a escrituras públicas notariales.
+
+  Proceso:
+    1. Lee tabla interna del .docx (WF, abogado redactor, cliente, RUT)
+       — Banlegal: sin tabla, datos en párrafos (acepta "WF XXXX" y "WF: XXXX")
+    2. Extrae cláusulas (cualquier ordinal en español, hasta CENTESIMO+) y título
+    3. Detecta comuna del Conservador de Bienes Raíces (también en Banlegal)
+    4. Aplica: Courier New 13pt, doble espacio, página oficio 21.59×33.02cm
+    5. Construye documento nuevo: encabezado notaría + título centrado +
+       párrafo único (comparecencia + cláusulas + cláusula COT + personerías)
+       + bloque firmas
+    6. Convierte números a letras (num2words), expande abreviaciones
+    7. Convierte RUT (13.499.632-3 → trece millones... guion tres)
+    8. Convierte fechas DD-MM-YYYY (14-07-2009 → catorce de julio del año...)
+    9. Convierte datos vehiculares dígito a dígito
+   10. Agrega don/doña via BD de nombres (tabla nombres_genero)
+   11. Detecta co-deudores y agrega tratamiento
+   12. Agrega Y OTRO / Y OTRA en el título si hay co-deudor
+   13. Negritas, subrayado fino (CLAUSULA, PERSONERÍA), subrayado THICK (Conservador)
+   14. Encabezado solo páginas impares, pie de página con número
+   15. Agrega cláusula art. 401 N°12 COT antes de las personerías,
+       con ordinal detectado automáticamente (siguiente al último del borrador)
+
+  CLÁUSULA COT (art. 401 N°12):
+    Se agrega en TODOS los documentos (BDC y Banlegal), justo antes
+    de las personerías. El ordinal se detecta automáticamente:
+    si el borrador termina en TERCERO → la nueva es CUARTO,
+    si termina en CENTESIMO VIGESIMO QUINTO → es CENTESIMO VIGESIMO SEXTO, etc.
+    Texto fijo: "Atendido lo dispuesto en el artículo cuatrocientos uno
+    número doce del Código Orgánico de Tribunales..."
+    Lógica en: formatear_utils.py (_detectar_siguiente_clausula,
+    _numero_a_ordinal, _ordinal_a_numero)
+
+  BANLEGAL — diferencias con BDC:
+    - Sin tabla: WF y abogado en párrafos ("WF XXXX" o "WF: XXXX")
+    - Un solo apoderado (ronnie o felix)
+    - La comuna se detecta del texto (no se hardcodea "BANLEGAL")
+    - Soporta borradores con cientos de cláusulas (ej: 125 alzamientos)
+
+  Apoderados BDC (_APODERADOS en formatear_controller.py):
+    nathalie  → Nathalie Jeannette Villalobos Rodriguez (personería 2022)
+    jonatan   → Jonatan Enrique Gutierrez Aguirre (personería 2018)
+    andrea    → Andrea Maritza Sanz Saavedra (personería 2016)
+
+  Apoderados Banlegal (_APODERADOS_BANLEGAL en banlegal_controller.py):
+    ronnie    → Ronnie Esteban Palma Cartes (personería 18-abr-2022)
+    felix     → Félix Francisco Morales Trujillo (personería 18-abr-2022)
+
+  Notarios (_NOTARIOS en formatear_controller.py):
+    carolina    → Carolina E. Piña Cuevas (Notario Público Interino)
+    suplente_1 / suplente_2 → arquitectura lista, datos pendientes
+
+  BD de nombres: 515 nombres (269 M, 246 F) en tabla nombres_genero.
+  Para recargar: python seed_nombres.py (busca LISTAS NOMBRES.docx en Descargas)
+
+================================================================
+MÓDULO 02 — REGISTRO Y TOMA DE REPERTORIOS (COMPLETO)
+================================================================
+
+Tab 1 "VISTOS BUENOS":
+  Sube Excel .xls del banco → parsea → guarda en tabla vb_escrituras
+  Modal selector de actividades
+  Tabla con botón copiar (gris → verde → amarillo)
+
+Tab 2 "FINALIZACIÓN":
+  Sección Carpeta de Descargas VB:
+    Primera vez: diálogo nativo Windows (tkinter) para elegir ruta base
+    Crea carpeta "Vistos Buenos de Abogados"
+    Botón Activar: crea subcarpeta "VB DD-MM-YYYY"
+    Hilo vigilador: monitorea ~/Downloads cada 2s, mueve .doc/.docx nuevos
+
+  Sección Words + Planillas:
+    Dropdown con subcarpetas VB disponibles
+    "Leer Words": extrae WF, nombre, materia, comuna de cada .docx
+    "Generar Planillas": agrupa por materia → un Excel por materia
+
+Tab 3 "REGISTRO DE REPERTORIOS":
+  Sección Repertorios:
+    "Llenar Words": completa N° repertorio y fecha en cada Word
+    Genera RESUMEN_DD-MM-YYYY.docx
+    Impresión via RICOH IM 550 PCL 6 (win32com)
+
+  Sección Registro de Datos:
+    "Indexar Repertorios": guarda en vb_registro desde planilla cargada
+    Idempotente: si WF ya existe lo actualiza
+    La tabla de resultados NO se carga al montar — solo después de indexar
+
+  NOTA: La tabla de indexados NO se recarga automáticamente al montar.
+  Solo aparece después de ejecutar "Indexar Repertorios".
+
+================================================================
+MÓDULO 03 — PREFIRMA (COMPLETO — PENDIENTE PRUEBA REAL)
+================================================================
+
+  Toma PDFs escaneados → los sube al formulario interno en 192.168.1.28
+  Vista previa 2 páginas (PyMuPDF), formulario con datos de vb_registro
+  POST silencioso (requests.post, sin navegador)
+
+  PENDIENTE: prueba real con red interna de la notaría
+
+================================================================
+MÓDULO 04 — POSTFIRMA (COMPLETO)
+================================================================
+
+  Recibe PDFs firmados electrónicamente, los renombra y organiza.
+
+  FORMATO NOMBRE FINAL:
+  {cert}-WF{wf}-RUT{rut}-REP{rep}-{comuna}-{nombre}-{MATERIA}-ALZAMIENTOS-BCH.pdf
+
+  Genera JSON para CBR Santiago (solo escrituras con comuna = "SANTIAGO").
+  Guarda firma_electronica en vb_registro.
+
+================================================================
+TABLA vb_registro — EJE CENTRAL DEL SISTEMA
+================================================================
+
+  id, wf (unique), rut, nombre_cliente, comuna, materia,
+  repertorio, anio, fecha_escritura, fecha_indexado,
+  numero_caratula (← llena Módulo 08),
+  firma_electronica (← llena Módulo 04),
+  cliente_notaria (← llena Módulo 02, para cobranza),
+  mes (← llena Módulo 02, para cobranza y gráfico),
+  usuario_id
+
+  IMPORTANTE: columnas mes, cliente_notaria, usuario_id fueron añadidas
+  por migración en main.py → registros anteriores tienen mes=NULL.
+  La query del gráfico filtra AND mes IS NOT NULL por esto.
+
+================================================================
+MÓDULO 05 — BÓVEDA / CUSTODIA (COMPLETO)
+================================================================
+
+  Registra entregas físicas al archivo. Agrupado por entrega.
+  Reingresos con contraseña "notaria33". Genera Word por entrega.
+  Buscador de historial en toda la BD.
+
+================================================================
+MÓDULO 06 — GESTIÓN DE COBROS / COBRANZA (COMPLETO)
+================================================================
+
+  Planilla mensual de cobro al banco. $12.000 por escritura.
+  Dos hojas Excel: "Romero y Asociados" / "Banco de Chile".
+  Lee desde vb_registro (cliente_notaria + mes).
+
+================================================================
+NOTAS TÉCNICAS IMPORTANTES
+================================================================
+
+- THICK underline (Conservador de Bienes Raíces):
+  OxmlElement('w:u') con w:val="thick" — python-docx no lo expone como constante
+
+- Párrafo único de cuerpo: comparecencia + cláusulas + personerías van en
+  UN SOLO párrafo con múltiples runs (norma notarial)
+
+- Encabezado solo páginas impares: via w:evenAndOddHeaders en doc.settings.element
+
+- El Excel del banco es HTML disfrazado de .xls, se parsea con html.parser
+
+- RUT: se convierte antes que _convertir_numeros para evitar fragmentación
+
+- PDF firmado por notario (Postfirma):
+    Página 1 contiene "Repertorio N° XXXX - YYYY" y "Certificado Nro XXXX"
+    Lectura con pdfplumber (ya instalado)
+
+- Python: 3.14 funciona correctamente
+  pymupdf instalado: 1.27.2.2
+
+- Módulos con nombre numérico (01_, 02_...): se importan con
+  importlib.import_module("modules.08_caratulas.model").Clase
+  porque Python no permite importar módulos que empiezan con número
+
+- IMAP Gmail: 1 query por WF (FROM cbr BODY wf) — necesario porque
+  el inbox tiene 22.495 correos del CBR y cargarlos todos es imposible
+
+================================================================
+REGLAS CLAVE PARA EL AGENTE
+================================================================
+1. Leer REGLAS DE ORO.txt antes de generar cualquier código
+2. Máx 600 líneas por archivo, máx 40 líneas por función
+3. Todo en español excepto props de librerías
+4. Orden obligatorio: model → schema → controller → routes → hook → componentes
+5. No crear archivos innecesarios, no agregar features no pedidas
+6. No modificar el cuerpo/fondo de las escrituras, solo la forma
+7. El producto final es una app de escritorio con Tauri
+8. Nombre notaria: Piña (con Ñ), nunca Pina
+9. Notaría: 33ª (ordinal femenino), nunca 33°
+================================================================

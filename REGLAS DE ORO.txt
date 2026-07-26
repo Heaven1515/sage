@@ -1,0 +1,225 @@
+================================================================
+CONSTITUCIÓN DEL PROYECTO — NOTARÍA 33 · ALZAMIENTOS BDC
+================================================================
+Versión: 1.0
+Todo agente de IA debe leer esto antes de generar código.
+================================================================
+
+STACK
+-----
+Frontend : Next.js 16 · React 19 · TypeScript · Tailwind CSS 4
+Backend  : FastAPI · SQLAlchemy · SQLite · Pydantic
+Repo     : Monorepo (frontend/ + backend/ en la misma raíz)
+Idioma   : Todo en español (props de librerías externas en inglés)
+
+----------------------------------------------------------------
+ESTRUCTURA DE CARPETAS
+----------------------------------------------------------------
+
+notaria-alzamientos/
+├── frontend/
+│   ├── app/
+│   │   ├── page.tsx                  ← Dashboard
+│   │   ├── confecciones/page.tsx
+│   │   ├── vb/page.tsx
+│   │   ├── prefirma/page.tsx
+│   │   ├── postfirma/page.tsx
+│   │   ├── boveda/page.tsx
+│   │   └── cobranza/page.tsx
+│   ├── components/
+│   │   ├── dashboard/
+│   │   └── ui/
+│   ├── hooks/                        ← Controllers del frontend
+│   │   ├── useConfecciones.ts
+│   │   ├── useVB.ts
+│   │   ├── usePrefirma.ts
+│   │   ├── usePostfirma.ts
+│   │   ├── useBoveda.ts
+│   │   └── useCobranza.ts
+│   ├── lib/
+│   └── public/
+│
+└── backend/
+    ├── main.py                       ← Entry point FastAPI
+    ├── database.py                   ← Conexión SQLAlchemy
+    ├── modules/
+    │   ├── 01_confecciones/
+    │   │   ├── model.py
+    │   │   ├── schema.py
+    │   │   ├── controller.py
+    │   │   └── routes.py
+    │   ├── 02_vb/
+    │   ├── 03_prefirma/
+    │   ├── 04_postfirma/
+    │   ├── 05_boveda/
+    │   └── 06_cobranza/
+    └── shared/
+        ├── models_base.py
+        └── utils.py
+
+----------------------------------------------------------------
+FLUJO MVC — ORDEN DE DESARROLLO POR MÓDULO
+----------------------------------------------------------------
+
+BACKEND (siempre en este orden):
+  1. model.py      → Tabla SQLAlchemy (estructura de datos)
+  2. schema.py     → Pydantic (validación entrada/salida API)
+  3. controller.py → Lógica de negocio pura (sin HTTP)
+  4. routes.py     → Endpoints FastAPI (solo llama al controller)
+
+FRONTEND (después del backend):
+  5. hooks/useModulo.ts → Fetch + estado (controller del frontend)
+  6. components/        → Componentes visuales (solo renderizan)
+  7. app/modulo/page.tsx → Ensambla componentes (mínimo código)
+
+----------------------------------------------------------------
+LOS 10 MANDAMIENTOS
+----------------------------------------------------------------
+
+I.    UN ARCHIVO, UNA RESPONSABILIDAD
+      Ningún archivo supera 600 líneas. Si se acerca, se divide.
+      Sin excepciones.
+
+II.   LA UI NO CONOCE LA LÓGICA
+      Los componentes React solo renderizan. Toda lógica vive
+      en hooks (useModulo.ts) o en el backend. Nunca fetch()
+      dentro de un componente.
+
+III.  TODO EN ESPAÑOL
+      Variables, funciones, comentarios: todo en español.
+      Props de librerías (React, etc.) se dejan en inglés.
+      ✓ nombreCliente   ✗ clientName
+      ✓ obtenerEscrituras()   ✗ getWritings()
+
+IV.   ESTRUCTURA DE CARPETAS INAMOVIBLE
+      El agente nunca crea carpetas fuera de la estructura
+      acordada. Cada módulo en su carpeta numerada.
+      (01_confecciones, 02_vb, 03_prefirma...)
+
+V.    ORDEN DE DESARROLLO OBLIGATORIO
+      Por módulo siempre:
+      model → schema → controller → routes → hook → componentes
+      No se salta ningún paso.
+
+VI.   DOBLE CAPA DE ERRORES SIEMPRE
+      - Manejador global en main.py para lo inesperado
+      - Try/except local en operaciones críticas
+        (Word, JSON, renombrar archivos) con log detallado
+      Sin errores silenciosos jamás.
+
+VII.  COMENTARIOS OBLIGATORIOS EN SECCIONES
+      Cada sección lleva un encabezado que explica QUÉ hace
+      y POR QUÉ existe. No se comenta lo obvio.
+      ✓ # Filtra WFs según etapas configuradas por el usuario
+      ✗ # Loop
+
+VIII. EL AGENTE PREGUNTA ANTES DE ASUMIR
+      Si un requerimiento es ambiguo o falta información de
+      negocio, el agente se detiene y pregunta.
+      Nunca se inventa lógica de negocio.
+
+IX.   EL DISEÑO VISUAL NO SE TOCA
+      Colores (#1565c0, #F4F6F8), tipografía y componentes UI
+      son intocables sin autorización explícita del usuario.
+      Design system protegido.
+
+X.    UN MÓDULO COMPLETO ANTES DEL SIGUIENTE
+      No se avanza al módulo siguiente hasta que el actual
+      tenga model, schema, controller, routes y hook
+      funcionando. Sin deudas técnicas entre módulos.
+
+XI.   TODO CAMBIO DE LÓGICA SE REFLEJA EN EL FRONT
+      Cada vez que se modifica o agrega lógica en el backend,
+      el agente DEBE preguntar si hay que actualizar el frontend
+      antes de dar la tarea por terminada.
+      Nunca asumir que "ya funciona igual" sin confirmación.
+
+----------------------------------------------------------------
+REGLAS DE ESCRITURA DE CÓDIGO
+----------------------------------------------------------------
+
+PYTHON (backend)
+  - Clases en PascalCase        → EscrituraModelo
+  - Funciones en snake_case     → obtener_escrituras()
+  - Variables en snake_case     → numero_wf
+  - Constantes en MAYÚSCULAS    → RUTA_UPLOADS
+  - Un __init__.py por carpeta de módulo
+  - Imports ordenados: stdlib → third party → locales
+
+TYPESCRIPT (frontend)
+  - Componentes en PascalCase   → ListaDeTrabajoTab
+  - Hooks en camelCase          → useConfecciones
+  - Variables en camelCase      → numeroWf
+  - Tipos/Interfaces PascalCase → EscrituraItem
+  - Props siempre tipadas, nunca "any"
+
+GENERAL
+  - Máximo 600 líneas por archivo
+  - Máximo 40 líneas por función
+  - Sin código comentado abandonado ("código zombie")
+  - Sin console.log / print() de debug en producción
+  - Toda función tiene un comentario de una línea si
+    su nombre no es 100% autoexplicativo
+
+----------------------------------------------------------------
+XII.  ORDEN DE EMPAQUETADO — JAMÁS SALTARSE ESTE PASO
+----------------------------------------------------------------
+
+  ANTES de ejecutar `pnpm tauri build`, SIEMPRE recompilar el
+  backend Python con PyInstaller. Si no se hace, el instalador
+  empaqueta una versión VIEJA del backend y cualquier cambio
+  en Python queda completamente ignorado en producción.
+
+  ORDEN OBLIGATORIO para generar un instalador:
+
+    Paso 1 — Compilar backend:
+      cd backend
+      pyinstaller sage_backend.spec --clean
+
+    Paso 2 — Copiar el exe al directorio de Tauri:
+      copy dist\backend.exe ..\frontend\src-tauri\binaries\backend-x86_64-pc-windows-msvc.exe
+
+    Paso 3 — Empaquetar con Tauri:
+      cd ..\frontend
+      pnpm tauri build
+
+  NUNCA ejecutar `pnpm tauri build` sin haber hecho los
+  pasos 1 y 2 primero. El archivo en src-tauri/binaries/ es
+  el backend real que va a producción — si está desactualizado,
+  todos los cambios Python son invisibles en la app instalada.
+
+  CAUSA REAL DEL ERROR (09-04-2026):
+  Se hicieron múltiples fixes en controller.py pero se ejecutó
+  solo `pnpm tauri build`. El instalador siguió llevando el
+  backend del 07-04-2026 durante horas de trabajo perdido.
+
+----------------------------------------------------------------
+XIII. BACKEND CON --reload EN DESARROLLO — REGLA ABSOLUTA
+----------------------------------------------------------------
+
+  En desarrollo el backend SIEMPRE se levanta con:
+    python -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
+
+  SIN --reload, Python carga los módulos una vez al arrancar y
+  NUNCA los recarga. Guardar un .py no tiene ningún efecto sobre
+  el proceso en ejecución. Esto hace que cualquier fix sea
+  invisible en el navegador aunque funcione en Python directo.
+
+  PROTOCOLO al diagnosticar un bug de backend:
+    1. Antes de nada: matar todos los procesos Python.
+         powershell -Command "Get-Process python -ErrorAction SilentlyContinue | Stop-Process -Force"
+    2. Reiniciar el backend con --reload.
+    3. Solo entonces reproducir el bug.
+
+  SEÑAL DE ALERTA: "el fix funciona en Python directo pero no
+  en el browser" → el backend tiene código viejo en memoria.
+  Solución: reiniciar el backend, nunca buscar el bug en el código.
+
+  CAUSA REAL DEL ERROR (12-04-2026):
+  El backend llevaba 8+ horas corriendo con código anterior a los
+  fixes del día. netstat mostraba un PID fantasma. Al matar el
+  proceso real y reiniciar, todos los errores desaparecieron.
+
+================================================================
+FIN DE LA CONSTITUCIÓN
+================================================================

@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Permisos por defecto de SAGE","local":true,"windows":["main"],"permissions":["core:default","shell:allow-execute","shell:allow-spawn","core:window:allow-close","core:window:allow-minimize","core:window:allow-start-dragging","core:window:allow-set-background-color"]}}

@@ -1,0 +1,16 @@
+2026-04-28T14:45:47,091 Using pip 26.0.1 from C:\Users\javie\AppData\Local\Programs\Python\Python313\Lib\site-packages\pip (python 3.13)
+2026-04-28T14:45:47,095 Non-user install because site-packages writeable
+2026-04-28T14:45:47,451 Created temporary directory: C:\Users\javie\AppData\Local\Temp\pip-build-tracker-kro3ir53
+2026-04-28T14:45:47,451 Initialized build tracking at C:\Users\javie\AppData\Local\Temp\pip-build-tracker-kro3ir53
+2026-04-28T14:45:47,451 Created build tracker: C:\Users\javie\AppData\Local\Temp\pip-build-tracker-kro3ir53
+2026-04-28T14:45:47,451 Entered build tracker: C:\Users\javie\AppData\Local\Temp\pip-build-tracker-kro3ir53
+2026-04-28T14:45:47,452 Created temporary directory: C:\Users\javie\AppData\Local\Temp\pip-install-d0ihna3v
+2026-04-28T14:45:47,455 Created temporary directory: C:\Users\javie\AppData\Local\Temp\pip-ephem-wheel-cache-040anco5
+2026-04-28T14:45:47,472 Requirement already satisfied: pytesseract in C:\Users\javie\AppData\Local\Programs\Python\Python313\Lib\site-packages (0.3.13)
+2026-04-28T14:45:47,476 Requirement already satisfied: packaging>=21.3 in C:\Users\javie\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pytesseract) (26.1)
+2026-04-28T14:45:47,477 Requirement already satisfied: Pillow>=8.0.0 in C:\Users\javie\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pytesseract) (12.2.0)
+2026-04-28T14:45:47,481 Created temporary directory: C:\Users\javie\AppData\Local\Temp\pip-unpack-uzp4j380
+2026-04-28T14:45:47,544 Remote version of pip: 26.0.1
+2026-04-28T14:45:47,544 Local version of pip:  26.0.1
+2026-04-28T14:45:47,547 Was pip installed by pip? True
+2026-04-28T14:45:47,547 Removed build tracker: 'C:\\Users\\javie\\AppData\\Local\\Temp\\pip-build-tracker-kro3ir53'

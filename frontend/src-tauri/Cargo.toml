@@ -1,0 +1,23 @@
+[package]
+name = "sage"
+version = "1.0.0"
+description = "SAGE — Sistema de Gestión Notarial · Notaría 33"
+authors = ["Notaría 33"]
+edition = "2021"
+
+[lib]
+name = "sage_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+reqwest = { version = "0.12", features = ["blocking"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+windows = { version = "0.58", features = ["Win32_Graphics_Dwm", "Win32_Foundation"] }

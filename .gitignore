@@ -1,0 +1,58 @@
+# ── Credenciales y secretos — NUNCA en el repo ────────────────────────────────
+credentials.json
+client_secret*.json
+token_*.json
+.env
+.env.*
+*.key
+*.pem
+*.p12
+service_account*.json
+
+# ── Bases de datos ─────────────────────────────────────────────────────────────
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# ── Datos de trabajo reales ────────────────────────────────────────────────────
+*.xlsx
+*.pdf
+
+# ── Python ─────────────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.spec
+venv/
+.venv/
+env/
+dist-backend/
+
+# ── Build artifacts ────────────────────────────────────────────────────────────
+dist/
+build/
+out/
+*.exe
+*.pkg
+*.dmg
+
+# ── Node / Next.js ─────────────────────────────────────────────────────────────
+node_modules/
+.next/
+.vercel/
+.v0-trash/
+.snowflake/
+next.user-config.*
+
+# ── OS ─────────────────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Editor ─────────────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
