@@ -1,3 +1,8 @@
+import { dirname } from 'path'
+import { fileURLToPath } from 'url'
+
+const __dirname = dirname(fileURLToPath(import.meta.url))
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Exportación estática requerida por Tauri (genera carpeta out/)
@@ -8,9 +13,10 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  // turbopack.root silencia el warning del lockfile múltiple
+  // turbopack.root resuelto dinámicamente para funcionar en cualquier máquina
+  // (local y GitHub Actions). Apunta al directorio donde está este archivo = frontend/
   turbopack: {
-    root: 'C:/Users/javie/OneDrive/Desktop/OuterHeaven/SAGE/frontend',
+    root: __dirname,
   },
   // Oculta el indicador de desarrollo (N circular)
   devIndicators: false,
