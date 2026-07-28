@@ -193,6 +193,9 @@ def indexar_sesion(
                 .first()
             )
 
+        # Si el cliente es Banco de Chile, siempre se renombra con prefijo BANLEGAL
+        es_banlegal = (cliente_notaria == "BANCO DE CHILE")
+
         if existente:
             # Actualiza preservando campos ya completos y sin tocar los de Postfirma
             existente.rut             = rut or existente.rut
@@ -204,6 +207,7 @@ def indexar_sesion(
             existente.mes             = mes or existente.mes
             existente.fecha_escritura = fecha_escritura or existente.fecha_escritura
             existente.cliente_notaria = cliente_notaria or existente.cliente_notaria
+            existente.es_banlegal     = es_banlegal or existente.es_banlegal
             contadores["actualizados"] += 1
         else:
             db.add(VBRegistro(
@@ -217,6 +221,7 @@ def indexar_sesion(
                 mes             = mes,
                 fecha_escritura = fecha_escritura,
                 cliente_notaria = cliente_notaria,
+                es_banlegal     = es_banlegal,
                 usuario_id      = usuario_id,
             ))
             contadores["indexados"] += 1
