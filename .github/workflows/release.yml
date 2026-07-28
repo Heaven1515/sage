@@ -28,7 +28,31 @@ jobs:
           pip install -r requirements.txt
           pip install pyinstaller
 
-      # ── 3. Compilar backend Python → backend.exe ───────────────────────────
+      # ── 3a. Crear BD plantilla (notaria.db) para que PyInstaller la bundle ──
+      # El spec incluye notaria.db como dato inicial. No está en el repo (.gitignore),
+      # así que la generamos aquí con todas las tablas vacías.
+      # En el primer arranque del exe, database.py la copia a %APPDATA%\SAGE\.
+      - name: Crear BD plantilla
+        run: |
+          cd backend
+          python -c "
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, str(Path('.').resolve()))
+          from database import Base, engine
+          import shared.nombres_model
+          import modules.01_confecciones.model
+          import modules.02_vb.model
+          import modules.03_prefirma.model
+          import modules.04_postfirma.model
+          import modules.05_boveda.model
+          import modules.07_configuracion.model
+          import modules.09_repertorios.registro_model
+          Base.metadata.create_all(bind=engine)
+          print('BD plantilla creada correctamente con todas las tablas.')
+          "
+
+      # ── 3b. Compilar backend Python → backend.exe ─────────────────────────
       - name: Compilar backend con PyInstaller
         run: |
           cd backend
