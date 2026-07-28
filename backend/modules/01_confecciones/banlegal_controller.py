@@ -141,7 +141,8 @@ def _extraer_datos_banlegal(doc: Document) -> dict:
     datos: dict[str, str] = {}
     for p in doc.paragraphs:
         texto = p.text.strip()
-        if texto.upper().startswith("ABOGADO:"):
+        # Acepta tanto 'ABOGADO:' (borrador crudo) como 'ABOGADO REDACTOR:' (doc ya formateado)
+        if texto.upper().startswith("ABOGADO") and ":" in texto:
             datos["abogado_redactor"] = texto.split(":", 1)[1].strip()
         elif re.match(r'^WF[\s:]+', texto, re.IGNORECASE):
             # Elimina el prefijo 'WF' seguido de ':' o espacio(s)
@@ -291,7 +292,7 @@ def formatear_banlegal(contenido: bytes, apo_id: str, notario: dict) -> bytes:
     _parrafo(doc_salida, "J.E. /6 REPERTORIO Nº",                    negrita=True, alineacion=JUST, interlineado=LN2)
     _parrafo(doc_salida, f"Abogado Redactor: {datos['abogado_redactor']}", negrita=True, alineacion=JUST, interlineado=LN2)
     _parrafo(doc_salida, f"WF {datos['wf']}",                         negrita=True, alineacion=JUST, interlineado=LN2)
-    _parrafo(doc_salida, "FISCALÍA",                                  negrita=True, alineacion=JUST, interlineado=LN2)
+    _parrafo(doc_salida, "BANLEGAL",                                  negrita=True, alineacion=JUST, interlineado=LN2)
     _parrafo(doc_salida, interlineado=LN2)
     _parrafo(doc_salida, interlineado=LN2)
 

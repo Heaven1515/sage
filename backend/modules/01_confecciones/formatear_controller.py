@@ -51,7 +51,7 @@ _APODERADOS: dict[str, dict] = {
             "novecientos seis guion dos"
         ),
         "fecha_personeria":   "quince de junio del año dos mil veintiséis",
-        "notaria_personeria": "la Notaría de Santiago de don Juan Francisco Alamos Ovejeros Notario Suplente",
+        "notaria_personeria": "la cuadragésima quinta Notaría de Santiago de don Juan Francisco Álamos Ovejeros Notario Suplente",
     },
     "jonatan": {
         "nombre":             "JONATAN ENRIQUE GUTIERREZ AGUIRRE",
@@ -62,7 +62,7 @@ _APODERADOS: dict[str, dict] = {
             "tres mil nueve guion uno"
         ),
         "fecha_personeria":   "quince de junio del año dos mil veintiséis",
-        "notaria_personeria": "la Notaría de Santiago de don Juan Francisco Alamos Ovejeros Notario Suplente",
+        "notaria_personeria": "la cuadragésima quinta Notaría de Santiago de don Juan Francisco Álamos Ovejeros Notario Suplente",
     },
     "andrea": {
         "nombre":             "ANDREA MARITZA SANZ SAAVEDRA",
@@ -72,7 +72,7 @@ _APODERADOS: dict[str, dict] = {
             "millones ochocientos ochenta y cinco mil cien guion cinco"
         ),
         "fecha_personeria":   "quince de junio del año dos mil veintiséis",
-        "notaria_personeria": "la Notaría de Santiago de don Juan Francisco Alamos Ovejeros Notario Suplente",
+        "notaria_personeria": "la cuadragésima quinta Notaría de Santiago de don Juan Francisco Álamos Ovejeros Notario Suplente",
     },
     "carolina_v": {
         "nombre":             "CAROLINA DE LOS ANGELES VILCHES ESCOBAR",
@@ -83,7 +83,7 @@ _APODERADOS: dict[str, dict] = {
             "cuarenta y dos guion cuatro"
         ),
         "fecha_personeria":   "quince de junio del año dos mil veintiséis",
-        "notaria_personeria": "la Notaría de Santiago de don Juan Francisco Alamos Ovejeros Notario Suplente",
+        "notaria_personeria": "la cuadragésima quinta Notaría de Santiago de don Juan Francisco Álamos Ovejeros Notario Suplente",
     },
     "maria_ines": {
         "nombre":             "MARIA INES ASENJO ALARCON",
@@ -94,7 +94,7 @@ _APODERADOS: dict[str, dict] = {
             "y uno guion nueve"
         ),
         "fecha_personeria":   "quince de junio del año dos mil veintiséis",
-        "notaria_personeria": "la Notaría de Santiago de don Juan Francisco Alamos Ovejeros Notario Suplente",
+        "notaria_personeria": "la cuadragésima quinta Notaría de Santiago de don Juan Francisco Álamos Ovejeros Notario Suplente",
     },
     "jacqueline": {
         "nombre":             "JACQUELINE DE LAS MERCEDES MIRANDA VALENZUELA",
@@ -105,7 +105,7 @@ _APODERADOS: dict[str, dict] = {
             "y uno guion tres"
         ),
         "fecha_personeria":   "quince de junio del año dos mil veintiséis",
-        "notaria_personeria": "la Notaría de Santiago de don Juan Francisco Alamos Ovejeros Notario Suplente",
+        "notaria_personeria": "la cuadragésima quinta Notaría de Santiago de don Juan Francisco Álamos Ovejeros Notario Suplente",
     },
 }
 
@@ -414,14 +414,17 @@ def _clausula_cot(parrafo, clausulas_tx: str) -> None:
     """
     Agrega la cláusula del art. 401 N°12 COT al párrafo de cuerpo.
     Detecta automáticamente el ordinal siguiente al último del cuerpo.
-    El ordinal va en negrita + subrayado delgado; los dos puntos en negrita.
+    El ordinal va en negrita + subrayado delgado; los dos puntos en negrita sin subrayado.
     Si la cláusula ya existe en el borrador, no se duplica.
     """
     if "cuatrocientos uno número doce" in clausulas_tx:
         return
     siguiente = _detectar_siguiente_clausula(clausulas_tx)
-    _run(parrafo, f" {siguiente}", negrita=True, subrayado=True)
-    _run(parrafo, _TEXTO_COT, negrita=None)
+    # El espacio previo va sin subrayado para evitar el artefacto visual de espacio subrayado
+    _run(parrafo, " ", negrita=None, subrayado=None)
+    _run(parrafo, siguiente, negrita=True, subrayado=True)
+    _run(parrafo, ":", negrita=True, subrayado=None)
+    _run(parrafo, _TEXTO_COT[1:], negrita=None)  # _TEXTO_COT empieza con ":" ya incluido arriba
 
 
 # ── Construcción del documento ────────────────────────────────────────────────
@@ -463,10 +466,10 @@ def _construir_documento(doc_salida: Document, datos: dict, titulo: str,
 
     _COMUNAS_ARIANNA = {"rancagua", "san miguel"}
     if any(c.lower() in _COMUNAS_ARIANNA for c in comunas):
+        # Regex flexible: cubre "Se faculta al portador" y "facultando al portador",
+        # "de la presente escritura" y "del presente instrumento", y otras variantes.
         clausulas_tx = re.sub(
-            r'Se faculta al portador de copia autorizada de la presente escritura,\s*'
-            r'para requerir del Conservador de Bienes Ra[ií]ces respectivo,\s*'
-            r'las anotaciones, inscripciones, subinscripciones y dem[aá]s actuaciones que procedan\.',
+            r'(?:Se\s+)?faculta(?:ndo)?\s+al\s+portador\s+de\s+copia\s+autorizada\b[^.]+\.',
             'Se faculta a doña ARIANNA OSORIO, titular de la cédula de identidad número '
             'veintiséis millones ochenta y dos mil ochocientos once guion ocho '
             'para requerir del Conservador de Bienes Raíces respectivo, '

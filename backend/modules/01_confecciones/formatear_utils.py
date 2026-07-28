@@ -221,6 +221,7 @@ def _convertir_abreviaturas(texto: str) -> str:
     return texto
 
 
+
 def _convertir_numeros(texto: str) -> str:
     """
     Reemplaza todos los números arábigos por su equivalente en español.
@@ -488,24 +489,19 @@ def _extraer_datos_formateado(doc: Document) -> dict:
             break
 
     # Extracción posicional sobre párrafos no vacíos (estructura del doc formateado):
-    #   Formato actual: 0: REPERTORIO  1: Abogado  2: WF  3: COMUNA  4: TITULO
-    #   Formato viejo:  0: REPERTORIO  1: Abogado  2: WF  3: TITULO  (sin línea de comuna)
-    # Detectar cuál formato es: si posición 3 parece un título de escritura
-    # (contiene palabras clave jurídicas), entonces no hay línea de comuna.
-    _PALABRAS_TITULO = (
-        "ALZAMIENTO", "HIPOTECA", "PROHIBICIÓN", "PROHIBICION",
-        "CANCELACIÓN", "CANCELACION", "PRENDA", "CONSTITUCIÓN",
-        "CONSTITUCION", "MODIFICACIÓN", "MODIFICACION", "CESIÓN",
-        "CESION", "COMPRAVENTA", "MANDATO",
-    )
+    #   Formato actual: 0: REPERTORIO  1: Abogado  2: WF  3: COMUNA  4: TITULO  5: BANCO DE CHILE
+    #   Formato viejo:  0: REPERTORIO  1: Abogado  2: WF  3: TITULO  4: BANCO DE CHILE
+    # Detección confiable: si pos4 es "BANCO DE CHILE", entonces pos3 es el título (formato viejo).
+    # El enfoque anterior usaba palabras clave en pos3, pero "PRENDA" es también identificador
+    # de tipo de documento (no título) y generaba falsos positivos.
     no_vacios = [t for t in textos if t]
-    pos3 = no_vacios[3].upper() if len(no_vacios) > 3 else ""
-    if any(palabra in pos3 for palabra in _PALABRAS_TITULO):
-        # Formato viejo: posición 3 es el título, no hay comuna explícita
+    pos4 = no_vacios[4].upper() if len(no_vacios) > 4 else ""
+    if pos4.startswith("BANCO DE CHILE"):
+        # Formato viejo: posición 3 es el título, no hay línea de comuna
         datos["titulo"] = no_vacios[3] if len(no_vacios) > 3 else ""
         datos["comuna"] = ""
     else:
-        # Formato actual: posición 3 es la comuna, posición 4 es el título
+        # Formato actual: posición 3 es la comuna/identificador, posición 4 es el título
         datos["comuna"] = no_vacios[3] if len(no_vacios) > 3 else ""
         datos.setdefault("titulo", no_vacios[4] if len(no_vacios) > 4 else "")
 
@@ -578,7 +574,9 @@ def _numero_a_ordinal(n: int) -> str:
 
 def _detectar_siguiente_clausula(clausulas_tx: str) -> str:
     """
-    Encuentra el ordinal de la última cláusula en el texto y retorna el siguiente.
+    Encuentra el ordinal más alto en el texto y retorna el siguiente.
+    Usa el MÁXIMO encontrado (no el último), para manejar borradores que
+    repiten un ordinal por error (ej: dos cláusulas TERCERO consecutivas).
     Usado para numerar automáticamente la cláusula del art. 401 N°12 COT.
     """
     _DEC = (
@@ -592,6 +590,10 @@ def _detectar_siguiente_clausula(clausulas_tx: str) -> str:
     if not matches:
         return 'SEGUNDO'
 
-    ultimo_ordinal = matches[-1].group(1).strip().replace('SÉPTIMO', 'SEPTIMO')
-    numero = _ordinal_a_numero(ultimo_ordinal)
-    return _numero_a_ordinal(numero + 1)
+    # Usar el ordinal más alto para evitar error cuando el borrador repite un ordinal
+    numeros = [
+        _ordinal_a_numero(m.group(1).strip().replace('SÉPTIMO', 'SEPTIMO'))
+        for m in matches
+    ]
+    maximo = max(numeros)
+    return _numero_a_ordinal(maximo + 1)
