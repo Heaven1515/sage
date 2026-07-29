@@ -226,13 +226,13 @@ pub fn run() {
                                         }
                                     }
                                     // Paso 2: esperar a que el SO libere el handle del proceso
-                                    tokio::time::sleep(std::time::Duration::from_millis(800)).await;
+                                    std::thread::sleep(std::time::Duration::from_millis(800));
                                     // Paso 3: taskkill como seguro en caso de que child.kill() no bastara
                                     let _ = std::process::Command::new("taskkill")
                                         .args(["/F", "/IM", "backend.exe", "/T"])
                                         .output();
                                     // Paso 4: espera final antes de que NSIS escriba los archivos
-                                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
+                                    std::thread::sleep(std::time::Duration::from_millis(500));
                                     let _ = update
                                         .download_and_install(|_, _| {}, || {})
                                         .await;
