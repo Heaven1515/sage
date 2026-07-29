@@ -217,6 +217,16 @@ pub fn run() {
                                     .blocking_show();
 
                                 if confirmar {
+                                    // Matar el backend ANTES de que el instalador NSIS
+                                    // intente reemplazar backend.exe. Si no se mata aquí,
+                                    // NSIS falla porque el archivo está en uso.
+                                    {
+                                        let state = app_updater.state::<GuardBackend>();
+                                        let mut guard = state.0.lock().unwrap();
+                                        if let Some(hijo) = guard.take() {
+                                            let _ = hijo.kill();
+                                        }
+                                    }
                                     let _ = update
                                         .download_and_install(|_, _| {}, || {})
                                         .await;
