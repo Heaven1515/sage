@@ -177,6 +177,17 @@ pub fn run() {
                 }
             });
 
+            // Al cerrar la ventana, mata el backend antes de que el instalador intente
+            // sobrescribir los archivos. Sin esto, backend.exe queda como proceso huérfano
+            // y el instalador NSIS no puede reemplazar el ejecutable.
+            ventana.on_window_event(|event| {
+                if let tauri::WindowEvent::Destroyed = event {
+                    let _ = std::process::Command::new("taskkill")
+                        .args(["/F", "/IM", "backend.exe", "/T"])
+                        .output();
+                }
+            });
+
             // Revisor de actualizaciones: corre en segundo plano 20 s después del arranque.
             // Espera a que la app esté estable antes de consultar GitHub Releases.
             // Si hay versión nueva, muestra un diálogo nativo preguntando si actualizar.
