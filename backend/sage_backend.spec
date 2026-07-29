@@ -57,6 +57,12 @@ a = Analysis(
         # python-multipart: requerido por FastAPI para UploadFile / Form
         'multipart',
         'multipart.multipart',
+        # pytesseract — OCR del módulo prefirma (no detectado por análisis estático)
+        'pytesseract',
+        'pytesseract.pytesseract',
+        # Pillow (PIL) — requerido por pytesseract para procesar imágenes
+        'PIL',
+        'PIL.Image',
         # Otros
         'multiprocessing',
         'multiprocessing.util',
