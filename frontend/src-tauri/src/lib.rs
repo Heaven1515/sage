@@ -183,7 +183,8 @@ pub fn run() {
             let app_cierre = app.handle().clone();
             ventana.on_window_event(move |event| {
                 if let tauri::WindowEvent::Destroyed = event {
-                    let mut guard = app_cierre.state::<GuardBackend>().0.lock().unwrap();
+                    let state = app_cierre.state::<GuardBackend>();
+                    let mut guard = state.0.lock().unwrap();
                     if let Some(hijo) = guard.take() {
                         let _ = hijo.kill();
                     }
