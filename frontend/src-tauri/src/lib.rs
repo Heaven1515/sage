@@ -217,9 +217,7 @@ pub fn run() {
                                     .blocking_show();
 
                                 if confirmar {
-                                    // Matar el backend ANTES de que el instalador NSIS
-                                    // intente reemplazar backend.exe. Si no se mata aquí,
-                                    // NSIS falla porque el archivo está en uso.
+                                    // Paso 1: kill por handle (limpio, específico a este proceso)
                                     {
                                         let state = app_updater.state::<GuardBackend>();
                                         let mut guard = state.0.lock().unwrap();
@@ -227,6 +225,14 @@ pub fn run() {
                                             let _ = hijo.kill();
                                         }
                                     }
+                                    // Paso 2: esperar a que el SO libere el handle del proceso
+                                    tokio::time::sleep(std::time::Duration::from_millis(800)).await;
+                                    // Paso 3: taskkill como seguro en caso de que child.kill() no bastara
+                                    let _ = std::process::Command::new("taskkill")
+                                        .args(["/F", "/IM", "backend.exe", "/T"])
+                                        .output();
+                                    // Paso 4: espera final antes de que NSIS escriba los archivos
+                                    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
                                     let _ = update
                                         .download_and_install(|_, _| {}, || {})
                                         .await;
