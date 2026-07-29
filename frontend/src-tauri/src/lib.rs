@@ -177,14 +177,16 @@ pub fn run() {
                 }
             });
 
-            // Al cerrar la ventana, mata el backend antes de que el instalador intente
-            // sobrescribir los archivos. Sin esto, backend.exe queda como proceso huérfano
-            // y el instalador NSIS no puede reemplazar el ejecutable.
-            ventana.on_window_event(|event| {
+            // Al cerrar la ventana, mata exactamente el proceso backend que lanzamos.
+            // Usar child.kill() en vez de taskkill evita matar otros procesos llamados
+            // backend.exe que puedan estar corriendo en el sistema.
+            let app_cierre = app.handle().clone();
+            ventana.on_window_event(move |event| {
                 if let tauri::WindowEvent::Destroyed = event {
-                    let _ = std::process::Command::new("taskkill")
-                        .args(["/F", "/IM", "backend.exe", "/T"])
-                        .output();
+                    let mut guard = app_cierre.state::<GuardBackend>().0.lock().unwrap();
+                    if let Some(hijo) = guard.take() {
+                        let _ = hijo.kill();
+                    }
                 }
             });
 
