@@ -223,7 +223,7 @@ pub fn run() {
                                     app_updater.restart();
                                 }
                             }
-                            Ok(None) => {} // Sin actualizaciones — no hacer nada
+                            Ok(None) => {} // Sin actualizaciones disponibles
                             Err(_) => {}   // Sin conexión o error de red — ignorar silenciosamente
                         }
                     }
