@@ -119,11 +119,11 @@ _NOTARIOS: dict[str, dict] = {
             "Trigésima Tercera Notaría de Santiago, cédula nacional de identidad "
             "número Dieciséis millones cuarenta y un mil seiscientos cinco guion K, "
             "con oficio en calle Huérfanos número novecientos setenta y nueve, "
-            "oficina quinientos uno, de la comuna de Santiago"
+            "oficina setecientos doce, piso siete, de la comuna de Santiago"
         ),
         "header_nombre": "CAROLINA E. PIÑA CUEVAS",
         "header_cargo":  "NOTARIO PÚBLICO INTERINO",
-        "header_oficio": "HUÉRFANOS 979 OF. 501 - SANTIAGO",
+        "header_oficio": "HUÉRFANOS 979 OF. 712 - SANTIAGO",
     },
     "suplente_1": {
         "nombre":        "BRENDA ANTONIA PÉREZ PINTO",
@@ -133,12 +133,12 @@ _NOTARIOS: dict[str, dict] = {
             "Notario Público Suplente de la interina de la Trigésima Tercera "
             "Notaría de Santiago, doña CAROLINA E. PIÑA CUEVAS, según Decreto "
             "Judicial ya protocolizado, con oficio en calle Huérfanos número "
-            "novecientos setenta y nueve, oficina quinientos uno de la Comuna "
+            "novecientos setenta y nueve, oficina setecientos doce, piso siete, de la Comuna "
             "de Santiago"
         ),
         "header_nombre": "BRENDA ANTONIA PÉREZ PINTO",
         "header_cargo":  "NOTARIO PÚBLICO SUPLENTE",
-        "header_oficio": "HUÉRFANOS 979 OF. 501 - SANTIAGO",
+        "header_oficio": "HUÉRFANOS 979 OF. 712 - SANTIAGO",
     },
     # suplente_2: agregar cuando haya datos disponibles
 }
