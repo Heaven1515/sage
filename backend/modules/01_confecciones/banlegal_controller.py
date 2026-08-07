@@ -195,7 +195,7 @@ def _comparecencia_banlegal(parrafo, notario: dict, apo: dict, anio: str) -> Non
     _run(parrafo, "EN SANTIAGO DE CHILE, ", negrita=True)
     _run(parrafo, f"a ____________________ del año {anio}, ante mí, ")
     _run(parrafo, notario["nombre"], negrita=True, subrayado=True)
-    _run(parrafo, f", {notario['descripcion']}, comparecen: {apo['tratamiento']} ")
+    _run(parrafo, f", {notario['descripcion']}, comparece: {apo['tratamiento']} ")
     _run(parrafo, apo["nombre"], negrita=True, subrayado=True)
     _run(parrafo,
         f", {apo['descripcion']}, quien comparece en representación, según se "
@@ -204,10 +204,10 @@ def _comparecencia_banlegal(parrafo, notario: dict, apo: dict, anio: str) -> Non
     _run(parrafo, "BANCO DE CHILE", negrita=True)
     _run(parrafo,
         ", anónima de giro bancario, Rol Único Tributario número noventa y "
-        "siete millones cuatro mil guion cinco, todos domiciliados en esta "
+        "siete millones cuatro mil guion cinco, domiciliado en esta "
         "ciudad, calle Paseo Ahumada número doscientos cincuenta y uno, "
-        "Santiago, ambos mayores de edad, quienes acreditan su identidad con "
-        "la cédula respectiva y exponen: "
+        "Santiago, mayor de edad, quien acredita su identidad con "
+        "la cédula respectiva y expone: "
     )
 
 
