@@ -4,6 +4,7 @@
 // Si el backend cae durante el uso, el watchdog lo reinicia automáticamente.
 
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicBool, Ordering};
 use tauri::Manager;
 use tauri_plugin_shell::process::CommandChild;
 use tauri_plugin_shell::ShellExt;
@@ -12,6 +13,11 @@ use tauri_plugin_shell::ShellExt;
 /// Sin esto, el CommandChild se dropea al terminar el closure de setup y
 /// el SO puede matar el proceso sidecar.
 struct GuardBackend(Mutex<Option<CommandChild>>);
+
+/// Flag que indica al watchdog que NO reinicie el backend durante una actualización.
+/// Sin esto el watchdog detecta que el backend cayó y lo relanza mientras NSIS
+/// intenta sobrescribir backend.exe, dejando el archivo bloqueado.
+struct ActualizandoFlag(AtomicBool);
 
 /// Convierte un color hex "#RRGGBB" al formato COLORREF de Windows (0x00BBGGRR).
 #[cfg(target_os = "windows")]
@@ -97,6 +103,7 @@ pub fn run() {
         // GuardBackend mantiene el CommandChild vivo mientras la app corre.
         // Sin este estado, el child se dropea al salir del closure de setup.
         .manage(GuardBackend(Mutex::new(None)))
+        .manage(ActualizandoFlag(AtomicBool::new(false)))
         .invoke_handler(tauri::generate_handler![set_titlebar_color])
         .setup(|app| {
             // Mata el backend anterior antes de lanzar uno nuevo.
@@ -160,7 +167,13 @@ pub fn run() {
                         fallos = 0;
                     } else {
                         fallos += 1;
-                        if fallos >= 3 {
+                        // Si hay una actualización en curso, el watchdog NO reinicia.
+                        // El instalador NSIS necesita backend.exe libre para sobrescribirlo.
+                        let actualizando = app_watchdog
+                            .state::<ActualizandoFlag>()
+                            .0
+                            .load(Ordering::SeqCst);
+                        if fallos >= 3 && !actualizando {
                             fallos = 0;
                             matar_backend_anterior();
                             let nuevo_hijo = lanzar_sidecar(&app_watchdog);
@@ -217,7 +230,14 @@ pub fn run() {
                                     .blocking_show();
 
                                 if confirmar {
-                                    // Paso 1: kill por handle (limpio, específico a este proceso)
+                                    // Paso 1: activar flag para que el watchdog NO reinicie el backend
+                                    // mientras el instalador NSIS sobrescribe backend.exe
+                                    app_updater
+                                        .state::<ActualizandoFlag>()
+                                        .0
+                                        .store(true, Ordering::SeqCst);
+
+                                    // Paso 2: kill por handle (limpio, específico a este proceso)
                                     {
                                         let state = app_updater.state::<GuardBackend>();
                                         let mut guard = state.0.lock().unwrap();
@@ -225,14 +245,15 @@ pub fn run() {
                                             let _ = hijo.kill();
                                         }
                                     }
-                                    // Paso 2: esperar a que el SO libere el handle del proceso
-                                    std::thread::sleep(std::time::Duration::from_millis(800));
-                                    // Paso 3: taskkill como seguro en caso de que child.kill() no bastara
+                                    // Paso 3: esperar a que el SO libere el handle del proceso
+                                    std::thread::sleep(std::time::Duration::from_millis(1500));
+                                    // Paso 4: taskkill como seguro adicional
                                     let _ = std::process::Command::new("taskkill")
                                         .args(["/F", "/IM", "backend.exe", "/T"])
                                         .output();
-                                    // Paso 4: espera final antes de que NSIS escriba los archivos
-                                    std::thread::sleep(std::time::Duration::from_millis(500));
+                                    // Paso 5: espera final para que el SO libere todos los handles
+                                    // antes de que NSIS intente sobrescribir backend.exe
+                                    std::thread::sleep(std::time::Duration::from_millis(1500));
                                     let _ = update
                                         .download_and_install(|_, _| {}, || {})
                                         .await;
