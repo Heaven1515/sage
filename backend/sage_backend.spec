@@ -21,8 +21,8 @@ a = Analysis(
         # Módulos del sistema (necesarios porque se cargan con importlib)
         ('modules', 'modules'),
         ('shared', 'shared'),
-        # Datos de idioma Tesseract (solo inglés — suficiente para los documentos del banco)
-        (r'C:\Program Files\Tesseract-OCR\tessdata\eng.traineddata', 'tesseract/tessdata'),
+        # Datos de idioma Tesseract — van directo en la carpeta tesseract/ (TESSDATA_PREFIX apunta ahí)
+        (r'C:\Program Files\Tesseract-OCR\tessdata\eng.traineddata', 'tesseract'),
     ],
     hiddenimports=[
         # Uvicorn — sus submódulos se cargan dinámicamente
