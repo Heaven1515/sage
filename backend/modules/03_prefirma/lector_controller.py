@@ -33,10 +33,12 @@ else:
 logger = logging.getLogger(__name__)
 
 # Detecta "REPERTORIO N°3090-2026" o "REPERTORIO N°3.090-2026"
+# [^\d\n]{0,10} absorbe cualquier variación del "N°" que el OCR produzca
+# (N°, Nº, No, N2, N-, N., solo N, etc.)
 # Grupo 1: número (puede tener puntos separadores de miles)
 # Grupo 2: año (4 dígitos)
 _PATRON_REPERTORIO = re.compile(
-    r"REPERTORIO\s+N[°º]?\s*([\d.]+)\s*[-–]\s*(\d{4})",
+    r"REPERTORIO[^\d\n]{0,10}([\d.]+)\s*[-–]\s*(\d{4})",
     re.IGNORECASE,
 )
 
@@ -87,7 +89,7 @@ def _ocr_primera_pagina(ruta_pdf: str) -> str:
     pixmap = doc[0].get_pixmap(matrix=fitz.Matrix(2.5, 2.5))
     imagen = Image.open(io.BytesIO(pixmap.tobytes("png")))
     doc.close()
-    return pytesseract.image_to_string(imagen, lang="spa")
+    return pytesseract.image_to_string(imagen, lang="spa+eng")
 
 
 def _extraer_repertorio(texto: str) -> tuple[str | None, str | None]:
