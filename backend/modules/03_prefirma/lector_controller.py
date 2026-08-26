@@ -87,7 +87,7 @@ def _ocr_primera_pagina(ruta_pdf: str) -> str:
     pixmap = doc[0].get_pixmap(matrix=fitz.Matrix(2.5, 2.5))
     imagen = Image.open(io.BytesIO(pixmap.tobytes("png")))
     doc.close()
-    return pytesseract.image_to_string(imagen, lang="eng")
+    return pytesseract.image_to_string(imagen, lang="spa")
 
 
 def _extraer_repertorio(texto: str) -> tuple[str | None, str | None]:

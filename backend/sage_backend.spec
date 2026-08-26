@@ -23,6 +23,7 @@ a = Analysis(
         ('shared', 'shared'),
         # Datos de idioma Tesseract — van directo en la carpeta tesseract/ (TESSDATA_PREFIX apunta ahí)
         (r'C:\Program Files\Tesseract-OCR\tessdata\eng.traineddata', 'tesseract'),
+        (r'C:\Program Files\Tesseract-OCR\tessdata\spa.traineddata', 'tesseract'),
     ],
     hiddenimports=[
         # Uvicorn — sus submódulos se cargan dinámicamente
