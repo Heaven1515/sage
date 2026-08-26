@@ -39,7 +39,11 @@ jobs:
           cd backend
           python crear_bd_plantilla.py
 
-      # ── 3b. Compilar backend Python → backend.exe ─────────────────────────
+      # ── 3b. Instalar Tesseract OCR (se bundlea dentro de backend.exe) ────────
+      - name: Instalar Tesseract OCR
+        run: choco install tesseract --yes
+
+      # ── 3c. Compilar backend Python → backend.exe ─────────────────────────
       - name: Compilar backend con PyInstaller
         run: |
           cd backend

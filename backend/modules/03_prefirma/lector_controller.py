@@ -12,14 +12,23 @@ Datos extraídos de la primera página:
 
 import io
 import logging
+import os
 import re
+import sys
 from pathlib import Path
 
 import fitz          # pymupdf — ya instalado en el proyecto (preview_controller)
 import pytesseract
 from PIL import Image
 
-pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
+if getattr(sys, 'frozen', False):
+    # Corriendo como backend.exe — usa Tesseract bundleado en sys._MEIPASS
+    _tess_dir = os.path.join(sys._MEIPASS, 'tesseract')
+    pytesseract.pytesseract.tesseract_cmd = os.path.join(_tess_dir, 'tesseract.exe')
+    os.environ.setdefault('TESSDATA_PREFIX', _tess_dir)
+else:
+    # Desarrollo local — usa Tesseract instalado en el sistema
+    pytesseract.pytesseract.tesseract_cmd = r"C:\Program Files\Tesseract-OCR\tesseract.exe"
 
 logger = logging.getLogger(__name__)
 

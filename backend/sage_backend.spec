@@ -10,13 +10,19 @@ block_cipher = None
 a = Analysis(
     ['run_backend.py'],
     pathex=[str(Path('.').resolve())],
-    binaries=[],
+    binaries=[
+        # Tesseract OCR — bundleado para que el PC destino no necesite instalarlo
+        (r'C:\Program Files\Tesseract-OCR\tesseract.exe', 'tesseract'),
+        (r'C:\Program Files\Tesseract-OCR\*.dll', 'tesseract'),
+    ],
     datas=[
         # BD plantilla: contiene nombres_genero, usuarios y config inicial
         ('notaria.db', '.'),
         # Módulos del sistema (necesarios porque se cargan con importlib)
         ('modules', 'modules'),
         ('shared', 'shared'),
+        # Datos de idioma Tesseract (solo inglés — suficiente para los documentos del banco)
+        (r'C:\Program Files\Tesseract-OCR\tessdata\eng.traineddata', 'tesseract/tessdata'),
     ],
     hiddenimports=[
         # Uvicorn — sus submódulos se cargan dinámicamente
