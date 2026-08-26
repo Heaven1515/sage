@@ -1,16 +1,19 @@
 """
-Vigila la carpeta del escáner mediante polling cada 8 segundos.
+Vigila una carpeta mediante polling cada 8 segundos.
 
 El polling es más robusto que watchdog en rutas de red UNC (\\servidor\carpeta)
 en Windows, donde las notificaciones del sistema de archivos son poco fiables.
 
 Flujo:
-  1. Cada 8s revisa qué PDFs hay en \\Desktop-14rq1mp\escaner riho 550
+  1. Cada 8s revisa qué PDFs hay en la carpeta configurada
   2. Si detecta uno nuevo (no visto antes), espera 12s
   3. Pasados los 12s llama al callback de procesamiento
 
 Los 12s de espera aseguran que el escáner terminó de copiar el archivo completo
 antes de intentar leerlo.
+
+La ruta vigilada se configura manualmente desde el módulo Prefirma o desde
+Configuración — no hay ninguna ruta fija en el código.
 """
 
 import logging
@@ -20,7 +23,6 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-RUTA_SCANNER   = r"\\Desktop-14rq1mp\escaner riho 550"
 INTERVALO_S    = 8   # segundos entre revisiones de la carpeta
 ESPERA_COPIA_S = 12  # segundos que se espera antes de procesar un PDF nuevo
 
@@ -56,7 +58,7 @@ class _HiloVigilador(threading.Thread):
         try:
             archivos = {f for f in os.listdir(self._ruta) if f.lower().endswith(".pdf")}
         except OSError as exc:
-            logger.warning("No se pudo leer \\\\Desktop-14rq1mp\\escaner riho 550: %s", exc)
+            logger.warning("No se pudo leer la carpeta '%s': %s", self._ruta, exc)
             return
 
         nuevos = archivos - self._vistos
@@ -74,15 +76,17 @@ class _HiloVigilador(threading.Thread):
 _hilo: _HiloVigilador | None = None
 
 
-def iniciar_vigilancia(callback, ruta: str | None = None) -> None:
+def iniciar_vigilancia(callback, ruta: str) -> None:
     """
-    Arranca el hilo vigilador. Lanza ValueError si ya está activo.
-    Si se indica 'ruta', usa esa carpeta; si no, usa RUTA_SCANNER.
+    Arranca el hilo vigilador en la carpeta indicada.
+    Lanza ValueError si ya está activo o si no se indicó una ruta.
     """
     global _hilo
+    if not ruta:
+        raise ValueError("Debes configurar la carpeta antes de iniciar el modo automático")
     if _hilo is not None and _hilo.is_alive():
         raise ValueError("El vigilador ya está activo")
-    _hilo = _HiloVigilador(ruta or RUTA_SCANNER, callback)
+    _hilo = _HiloVigilador(ruta, callback)
     _hilo.start()
 
 

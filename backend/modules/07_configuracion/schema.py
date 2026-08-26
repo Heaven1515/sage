@@ -94,6 +94,7 @@ class ConfiguracionSchema(BaseModel):
     red_interna:      str | None = None
     ip_impresora:     str | None = None
     nombre_impresora: str | None = None
+    escaner_red:      str | None = None
     modo_demo:        bool       = False
 
     model_config = {"from_attributes": True}

@@ -154,6 +154,7 @@ export default function ConfiguracionPage() {
 
                   <ModuleCard icon={FileSignature} label="Envío Firma Electrónica">
                     <ConfigField label="Carpeta escaneados" value={cfg.pre_escaneados ?? ""} onChange={set("pre_escaneados")} />
+                    <ConfigField label="Ruta escáner de red (ej: \\\\Equipo\\Carpeta)" value={cfg.escaner_red ?? ""} onChange={set("escaner_red")} />
                     <ConfigField label="URL formulario interno" value={cfg.pre_url ?? ""} onChange={set("pre_url")} />
                   </ModuleCard>
 

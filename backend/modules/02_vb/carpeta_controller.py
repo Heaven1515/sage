@@ -240,6 +240,42 @@ def activar_carpeta(db: Session, nombre_carpeta: str | None = None) -> EstadoCar
     return obtener_estado(db)
 
 
+def reinicializar_carpeta(db: Session) -> EstadoCarpeta:
+    """
+    Detiene el vigilador y abre el diálogo para elegir una nueva carpeta base.
+    Permite cambiar la carpeta en cualquier momento, aunque ya esté configurada.
+    Si el usuario cancela el diálogo, devuelve el estado sin cambios (solo detiene
+    el vigilador si estaba activo).
+    """
+    _vigilador.desactivar()
+
+    ruta_elegida = _abrir_dialogo_carpeta()
+    if not ruta_elegida:
+        # Canceló — dejamos la ruta que había pero marcamos como inactiva
+        config = _obtener_o_crear_config(db)
+        config.activa = False
+        db.commit()
+        return obtener_estado(db)
+
+    carpeta_matriz = Path(ruta_elegida) / _NOMBRE_CARPETA_MATRIZ
+    try:
+        carpeta_matriz.mkdir(parents=True, exist_ok=True)
+        logger.info("Nueva carpeta matriz: %s", carpeta_matriz)
+    except Exception as e:
+        logger.error("No se pudo crear la carpeta matriz: %s", e)
+        raise ValueError(f"No se pudo crear la carpeta en '{ruta_elegida}': {e}")
+
+    config = _obtener_o_crear_config(db)
+    config.ruta_base = ruta_elegida
+    config.ruta_descargas = _detectar_descargas()
+    config.configurada = True
+    config.activa = False
+    config.carpeta_hoy = None
+    db.commit()
+    db.refresh(config)
+    return obtener_estado(db)
+
+
 def desactivar_carpeta(db: Session) -> EstadoCarpeta:
     """Detiene el vigilador de descargas y marca la config como inactiva en la BD."""
     _vigilador.desactivar()

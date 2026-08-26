@@ -71,14 +71,15 @@ def _seed_usuario_defecto(db: Session) -> None:
 # ── Config singleton ──────────────────────────────────────────────────────────
 
 _DEFECTOS: dict = {
-    "conf_escaneados": "O:\\ESCANEADOS",
-    "vb_carpeta":      "O:\\VB",
-    "vb_salida":       "O:\\SALIDA",
-    "pre_escaneados":  "O:\\ESCANEADOS",
+    "conf_escaneados": "",
+    "vb_carpeta":      "",
+    "vb_salida":       "",
+    "pre_escaneados":  "",
     "pre_url":         "http://192.168.1.28/in_copia_compulsa_ad_pdf.php",
-    "post_entrada":    "O:\\ENTRADA",
-    "post_salida":     "O:\\SALIDA",
+    "post_entrada":    "",
+    "post_salida":     "",
     "post_url":        "https://conservador.cl/portal/ingresar_cc",
+    "escaner_red":     "",
     "notaria":         "33ª Notaría de Santiago",
     "notario_titular": "Carolina Elizabeth Piña Cuevas",
     "notario_dia":     "Carolina Elizabeth Piña Cuevas",

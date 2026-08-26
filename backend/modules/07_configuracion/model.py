@@ -59,3 +59,4 @@ class Configuracion(Base):
     ip_impresora     = Column(String, nullable=True)   # Dirección IP de la impresora en red (ej: 192.168.1.100)
     nombre_impresora = Column(String, nullable=True)   # Nombre de la impresora en Windows (ej: RICOH IM 550 PCL 6)
     anio_repertorios = Column(Integer, nullable=True)  # Año activo para llenar Words de repertorios (override del Excel)
+    escaner_red      = Column(String,  nullable=True)  # Módulo 03 — ruta del escáner de red (UNC o local), configurable manualmente

@@ -113,5 +113,18 @@ export function useVBCarpeta() {
     }
   }, [])
 
-  return { estado, cargando, error, inicializar, activar, desactivar }
+  // ── Cambia la carpeta base — detiene vigilador y abre diálogo de selección ─
+  const reinicializar = useCallback(async (): Promise<void> => {
+    setCargando(true)
+    setError(null)
+    try {
+      setEstado(await llamarEndpoint("reinicializar"))
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al cambiar carpeta")
+    } finally {
+      setCargando(false)
+    }
+  }, [])
+
+  return { estado, cargando, error, inicializar, activar, desactivar, reinicializar }
 }

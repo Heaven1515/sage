@@ -174,6 +174,10 @@ with engine.connect() as _conn:
         _conn.execute(_text("ALTER TABLE configuracion ADD COLUMN modo_demo BOOLEAN NOT NULL DEFAULT 0"))
         _conn.commit()
         logger.info("Migración aplicada: configuracion.modo_demo")
+    if "escaner_red" not in _cols_config:
+        _conn.execute(_text("ALTER TABLE configuracion ADD COLUMN escaner_red TEXT"))
+        _conn.commit()
+        logger.info("Migración aplicada: configuracion.escaner_red")
 
     # Migración: usuario_id en boveda_registro (para rastrear quién registra cada entrega)
     _cols_boveda = [row[1] for row in _conn.execute(_text("PRAGMA table_info(boveda_registro)"))]

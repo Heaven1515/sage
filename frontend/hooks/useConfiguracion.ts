@@ -31,6 +31,7 @@ export interface ConfiguracionData {
   red_interna:      string | null
   ip_impresora:     string | null
   nombre_impresora: string | null
+  escaner_red:      string | null
   modo_demo:        boolean
 }
 

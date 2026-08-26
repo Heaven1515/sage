@@ -23,6 +23,7 @@ from .carpeta_controller import (
     desactivar_carpeta,
     inicializar_carpeta,
     obtener_estado,
+    reinicializar_carpeta,
 )
 from .carpeta_schema import EstadoCarpeta, SolicitudActivar
 
@@ -78,6 +79,23 @@ def activar(solicitud: SolicitudActivar, db: Session = Depends(obtener_db)):
     except Exception as e:
         logger.error("Error al activar carpeta: %s", e)
         raise HTTPException(status_code=500, detail="Error al activar")
+
+
+# ── POST /vb/carpeta/reinicializar ───────────────────────────────────────────
+
+@router.post(
+    "/reinicializar",
+    response_model=EstadoCarpeta,
+    summary="Detiene el vigilador y permite seleccionar una nueva carpeta base",
+)
+def reinicializar(db: Session = Depends(obtener_db)):
+    try:
+        return reinicializar_carpeta(db)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Error al reinicializar carpeta: %s", e)
+        raise HTTPException(status_code=500, detail="Error al reinicializar")
 
 
 # ── POST /vb/carpeta/desactivar ──────────────────────────────────────────────

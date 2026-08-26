@@ -11,7 +11,7 @@
 */
 
 import { useState, useRef, useEffect } from "react"
-import { Upload, Trash2, Copy, CheckCircle2, FileText, XCircle, FolderPlus, FolderOpen } from "lucide-react"
+import { Upload, Trash2, Copy, CheckCircle2, FileText, XCircle, FolderPlus, FolderOpen, RefreshCw } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useVB, type FilaVB } from "@/hooks/useVB"
 import { useVBCarpeta, type EstadoCarpeta } from "@/hooks/useVBCarpeta"
@@ -38,9 +38,10 @@ interface PropsCarpeta {
   inicializar: () => Promise<void>
   activar: (nombre?: string) => Promise<void>
   desactivar: () => Promise<void>
+  reinicializar: () => Promise<void>
 }
 
-function SeccionCarpeta({ estado, cargando, error, inicializar, activar, desactivar }: PropsCarpeta) {
+function SeccionCarpeta({ estado, cargando, error, inicializar, activar, desactivar, reinicializar }: PropsCarpeta) {
   const [carpetaDestino, setCarpetaDestino] = useState<string>(nombreCarpetaHoy())
   const [carpetasDisponibles, setCarpetasDisponibles] = useState<string[]>([])
 
@@ -82,11 +83,22 @@ function SeccionCarpeta({ estado, cargando, error, inicializar, activar, desacti
         </div>
       ) : (
         <div className="flex flex-col gap-4">
-          <div>
-            <p className="text-xs text-[#9CA3AF] mb-1.5">Carpeta matriz</p>
-            <span className="text-xs text-[#9CA3AF] bg-[#F4F6F8] rounded-lg px-3 py-2 inline-block border border-gray-100">
-              {estado.rutaBase}\Vistos Buenos de Abogados
-            </span>
+          <div className="flex items-center gap-3 flex-wrap">
+            <div>
+              <p className="text-xs text-[#9CA3AF] mb-1.5">Carpeta matriz</p>
+              <span className="text-xs text-[#9CA3AF] bg-[#F4F6F8] rounded-lg px-3 py-2 inline-block border border-gray-100">
+                {estado.rutaBase}\Vistos Buenos de Abogados
+              </span>
+            </div>
+            <button
+              onClick={reinicializar}
+              disabled={cargando}
+              title="Cambiar carpeta base"
+              className="flex items-center gap-1.5 border border-gray-200 hover:border-[var(--accent)]/40 hover:text-[var(--accent)] text-[#6B7280] rounded-lg px-3 h-8 text-xs font-medium transition-all disabled:opacity-50 mt-4"
+            >
+              <RefreshCw size={12} />
+              Cambiar carpeta
+            </button>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
             {estado.activa ? (
@@ -146,11 +158,12 @@ interface Props {
   inicializar: () => Promise<void>
   activar: (nombre?: string) => Promise<void>
   desactivar: () => Promise<void>
+  reinicializar: () => Promise<void>
 }
 
 export function ListaVBTab({
   estadoCarpeta, cargandoCarpeta, errorCarpeta,
-  inicializar, activar, desactivar,
+  inicializar, activar, desactivar, reinicializar,
 }: Props) {
   const { filas, cargando, error, resultado, subirExcel, limpiar, copiarWF } = useVB()
 
@@ -397,6 +410,7 @@ export function ListaVBTab({
         inicializar={inicializar}
         activar={activar}
         desactivar={desactivar}
+        reinicializar={reinicializar}
       />
     </div>
   )

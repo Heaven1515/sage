@@ -16,6 +16,7 @@ import { AppShell }         from "@/components/dashboard/app-shell"
 import { ListaArchivos }    from "@/components/prefirma/ListaArchivos"
 import { VisorPDF }         from "@/components/prefirma/VisorPDF"
 import { PanelControl }     from "@/components/prefirma/PanelControl"
+import { PanelLogs }        from "@/components/prefirma/PanelLogs"
 import { usePrefirma }      from "@/hooks/usePrefirma"
 
 export default function PrefirmaPage() {
@@ -31,6 +32,7 @@ export default function PrefirmaPage() {
     mostrarModalManual, setMostrarModalManual, registrarManual,
     enviando, enviar, error,
     estadoAuto, cargandoAuto, iniciarAuto, detenerAuto,
+    logs,
   } = usePrefirma()
 
   return (
@@ -56,6 +58,9 @@ export default function PrefirmaPage() {
           onIniciar = {iniciarAuto}
           onDetener = {detenerAuto}
         />
+
+        {/* Panel de logs del modo automático */}
+        <PanelLogs logs={logs} />
 
         <VisorPDF
           archivoActual    = {archivoActual}

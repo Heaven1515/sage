@@ -439,22 +439,17 @@ def obtener_logs(db: Session) -> list[LogItem]:
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-_RUTA_ESCANER_ACTUAL = vigilador_controller.RUTA_SCANNER
-_RUTA_ESCANER_VIEJA  = r"\\NOTARIA-10\scan"
-
-
 def _obtener_o_crear_config(db: Session) -> PrefirmaConfig:
+    """
+    Retorna la config de Prefirma (id=1). Si no existe la crea vacía.
+    La ruta de carpeta la configura el usuario manualmente — no hay ningún
+    valor predeterminado en el código.
+    """
     config = db.query(PrefirmaConfig).filter_by(id=1).first()
     if config is None:
-        # Primera vez: crear con la ruta del escáner actual
-        config = PrefirmaConfig(id=1, activo=False, ruta_carpeta=_RUTA_ESCANER_ACTUAL)
+        config = PrefirmaConfig(id=1, activo=False, ruta_carpeta=None)
         db.add(config)
         db.commit()
-    elif config.ruta_carpeta in (None, _RUTA_ESCANER_VIEJA):
-        # Migrar ruta vacía o del escáner anterior al nuevo
-        config.ruta_carpeta = _RUTA_ESCANER_ACTUAL
-        db.commit()
-        logger.info("Ruta del escáner migrada a: %s", _RUTA_ESCANER_ACTUAL)
     return config
 
 

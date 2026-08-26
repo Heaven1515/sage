@@ -25,6 +25,7 @@ export default function VBPage() {
     inicializar,
     activar,
     desactivar,
+    reinicializar,
   } = useVBCarpeta()
 
   return (
@@ -72,6 +73,7 @@ export default function VBPage() {
             inicializar={inicializar}
             activar={activar}
             desactivar={desactivar}
+            reinicializar={reinicializar}
           />
         </div>
         <div className={activeTab !== 2 ? "hidden" : ""}>
