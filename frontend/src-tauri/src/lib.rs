@@ -245,15 +245,30 @@ pub fn run() {
                                             let _ = hijo.kill();
                                         }
                                     }
-                                    // Paso 3: esperar a que el SO libere el handle del proceso
-                                    std::thread::sleep(std::time::Duration::from_millis(1500));
-                                    // Paso 4: taskkill como seguro adicional
-                                    let _ = std::process::Command::new("taskkill")
-                                        .args(["/F", "/IM", "backend.exe", "/T"])
-                                        .output();
-                                    // Paso 5: espera final para que el SO libere todos los handles
-                                    // antes de que NSIS intente sobrescribir backend.exe
-                                    std::thread::sleep(std::time::Duration::from_millis(1500));
+
+                                    // Paso 3: loop hasta confirmar que backend.exe está muerto.
+                                    // En vez de esperar tiempos fijos, verificamos con tasklist
+                                    // que el proceso realmente desapareció antes de llamar al
+                                    // instalador. Máximo 10s (20 intentos × 500ms).
+                                    for _ in 0..20 {
+                                        std::thread::sleep(std::time::Duration::from_millis(500));
+                                        let _ = std::process::Command::new("taskkill")
+                                            .args(["/F", "/IM", "backend.exe", "/T"])
+                                            .output();
+                                        let sigue_vivo = std::process::Command::new("tasklist")
+                                            .args(["/FI", "IMAGENAME eq backend.exe", "/NH"])
+                                            .output()
+                                            .map(|o| String::from_utf8_lossy(&o.stdout)
+                                                      .contains("backend.exe"))
+                                            .unwrap_or(true);
+                                        if !sigue_vivo {
+                                            break;
+                                        }
+                                    }
+                                    // Pausa extra para que Windows libere los handles del archivo
+                                    // antes de que NSIS intente abrir backend.exe para escribir
+                                    std::thread::sleep(std::time::Duration::from_millis(1000));
+
                                     let _ = update
                                         .download_and_install(|_, _| {}, || {})
                                         .await;

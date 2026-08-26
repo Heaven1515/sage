@@ -143,6 +143,14 @@ def estado_modo_demo(db: Session = Depends(obtener_db)):
     return controller.estado_modo_demo(db)
 
 
+# ── GET /configuracion/impresoras ────────────────────────────────────────────
+
+@router.get("/configuracion/impresoras")
+def listar_impresoras():
+    """Lista las impresoras instaladas en Windows leyendo wmic."""
+    return {"impresoras": controller.listar_impresoras()}
+
+
 # ── GET /configuracion/nombres ────────────────────────────────────────────────
 
 @router.get("/configuracion/nombres", response_model=list[NombreSchema])

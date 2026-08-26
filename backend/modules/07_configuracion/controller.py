@@ -249,7 +249,7 @@ def actualizar_configuracion(datos: dict, db: Session) -> ConfiguracionSchema:
 
     _CAMPOS = [
         "conf_escaneados", "vb_carpeta", "vb_salida",
-        "pre_escaneados",  "pre_url",
+        "pre_escaneados",  "pre_url",    "escaner_red",
         "post_entrada",    "post_salida", "post_url",
         "notaria",         "notario_titular", "notario_dia",
         "valor_operacion", "red_interna",     "ip_impresora",     "nombre_impresora",
@@ -303,3 +303,27 @@ def es_modo_demo(db: Session) -> bool:
     """Helper que retorna True si el modo demo está activo. Usado por otros módulos."""
     cfg = db.query(Configuracion).filter(Configuracion.id == 1).first()
     return bool(cfg and cfg.modo_demo)
+
+
+# ── Impresoras ────────────────────────────────────────────────────────────────
+
+def listar_impresoras() -> list[str]:
+    """
+    Retorna los nombres de las impresoras instaladas en Windows.
+    Usa wmic para leer el registro sin dependencias externas.
+    Retorna lista vacía si el comando falla o no hay impresoras.
+    """
+    import subprocess
+    try:
+        resultado = subprocess.run(
+            ["wmic", "printer", "get", "name"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        lineas = resultado.stdout.strip().splitlines()
+        # La primera línea es el encabezado "Name", el resto son los nombres
+        return [l.strip() for l in lineas[1:] if l.strip()]
+    except Exception as exc:
+        logger.warning("No se pudo leer la lista de impresoras: %s", exc)
+        return []

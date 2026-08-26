@@ -428,9 +428,13 @@ def enviar_y_registrar(
 # ── Historial ─────────────────────────────────────────────────────────────────
 
 def obtener_logs(db: Session) -> list[LogItem]:
-    """Lista todos los logs, más recientes primero."""
+    """Lista las operaciones del día de hoy, más recientes primero."""
+    from datetime import date
+    from sqlalchemy import func
+    hoy = date.today().isoformat()
     filas = (
         db.query(PrefirmaLog)
+        .filter(func.date(PrefirmaLog.fecha_procesado) == hoy)
         .order_by(PrefirmaLog.fecha_procesado.desc())
         .all()
     )

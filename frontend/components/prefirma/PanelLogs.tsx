@@ -54,9 +54,8 @@ interface Props {
 export function PanelLogs({ logs }: Props) {
   const [abierto, setAbierto] = useState(false)
 
-  const errores    = logs.filter(l => l.estado === "error").length
-  const sinDatos   = logs.filter(l => l.estado === "sin_datos").length
-  const recientes  = logs.slice(0, 50)
+  const errores  = logs.filter(l => l.estado === "error").length
+  const sinDatos = logs.filter(l => l.estado === "sin_datos").length
 
   return (
     <div className="bg-white border border-gray-100 rounded-xl shadow-sm">
@@ -68,7 +67,7 @@ export function PanelLogs({ logs }: Props) {
       >
         <div className="flex items-center gap-3">
           <p className="text-xs font-semibold text-[#6B7280] tracking-wider uppercase">
-            Historial de procesamiento
+            Operaciones de hoy
           </p>
           {logs.length > 0 && (
             <div className="flex gap-2">
@@ -91,7 +90,7 @@ export function PanelLogs({ logs }: Props) {
           )}
         </div>
         <div className="flex items-center gap-2 text-[#9CA3AF]">
-          <span className="text-xs">{logs.length} registros</span>
+          <span className="text-xs">{logs.length} operacion{logs.length !== 1 ? "es" : ""}</span>
           {abierto ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
         </div>
       </button>
@@ -99,15 +98,15 @@ export function PanelLogs({ logs }: Props) {
       {/* Tabla desplegable */}
       {abierto && (
         <div className="border-t border-gray-100 overflow-x-auto">
-          {recientes.length === 0 ? (
+          {logs.length === 0 ? (
             <p className="px-5 py-6 text-sm text-[#9CA3AF] text-center">
-              Sin registros aún — el historial aparece aquí cuando el modo automático procesa archivos
+              Sin operaciones hoy — aparecen aquí cuando el modo automático procesa archivos
             </p>
           ) : (
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-[#F4F6F8] border-b border-gray-100">
-                  {["Fecha", "Archivo", "Repertorio", "Estado", "Detalle"].map(col => (
+                  {["Hora", "Archivo", "Repertorio", "Estado", "Detalle"].map(col => (
                     <th key={col} className="text-left font-semibold text-[#6B7280] px-4 py-2.5 uppercase tracking-wide">
                       {col}
                     </th>
@@ -115,7 +114,7 @@ export function PanelLogs({ logs }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {recientes.map(log => (
+                {logs.map(log => (
                   <tr key={log.id} className="border-b border-gray-50 hover:bg-[#F4F6F8]/50">
                     <td className="px-4 py-2.5 tabular-nums text-[#9CA3AF] whitespace-nowrap">
                       {formatearFecha(log.fecha_procesado)}

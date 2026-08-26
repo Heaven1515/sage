@@ -57,6 +57,7 @@ export interface CrearUsuarioDatos {
 export function useConfiguracion() {
   const [configuracion, setConfiguracion] = useState<ConfiguracionData | null>(null)
   const [usuarios,      setUsuarios]      = useState<UsuarioItem[]>([])
+  const [impresoras,    setImpresoras]    = useState<string[]>([])
   const [cargando,      setCargando]      = useState(false)
   const [guardando,     setGuardando]     = useState(false)
   const [error,         setError]         = useState<string | null>(null)
@@ -149,6 +150,17 @@ export function useConfiguracion() {
     setUsuarios(prev => prev.filter(u => u.id !== id))
   }, [])
 
+  // ── Carga la lista de impresoras instaladas en Windows ───────────────────
+  const cargarImpresoras = useCallback(async () => {
+    try {
+      const res  = await fetch(`${API}/configuracion/impresoras`)
+      const data = await res.json()
+      if (res.ok) setImpresoras(data.impresoras as string[])
+    } catch {
+      // Si falla, el dropdown queda vacío — no es crítico
+    }
+  }, [])
+
   // ── Toggle Modo Demo ────────────────────────────────────────────────────────
   const toggleModoDemo = useCallback(async (): Promise<void> => {
     try {
@@ -164,11 +176,13 @@ export function useConfiguracion() {
   useEffect(() => {
     cargarConfiguracion()
     cargarUsuarios()
-  }, [cargarConfiguracion, cargarUsuarios])
+    cargarImpresoras()
+  }, [cargarConfiguracion, cargarUsuarios, cargarImpresoras])
 
   return {
     configuracion,
     usuarios,
+    impresoras,
     cargando,
     guardando,
     guardado,

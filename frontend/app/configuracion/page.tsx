@@ -40,6 +40,46 @@ function ConfigField({
   )
 }
 
+// ── SelectField ───────────────────────────────────────────────────────────────
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  opciones,
+  disabled = false,
+}: {
+  label:    string
+  value:    string
+  onChange: (v: string) => void
+  opciones: string[]
+  disabled?: boolean
+}) {
+  return (
+    <div>
+      <label className="block text-xs text-[#6B7280] font-medium uppercase tracking-wider mb-1">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        disabled={disabled}
+        className="w-full bg-[#F4F6F8] border border-gray-200 rounded-lg px-3 h-9 text-sm text-[#111827] focus:outline-none focus:ring-2 focus:ring-[var(--accent-ring)] focus:border-[var(--accent)]/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {value && !opciones.includes(value) && (
+          <option value={value}>{value}</option>
+        )}
+        {opciones.length === 0 && !value && (
+          <option value="">Cargando impresoras...</option>
+        )}
+        {opciones.map(op => (
+          <option key={op} value={op}>{op}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 // ── Module card ───────────────────────────────────────────────────────────────
 
 function ModuleCard({
@@ -68,7 +108,7 @@ function ModuleCard({
 
 export default function ConfiguracionPage() {
   const {
-    configuracion, usuarios, cargando, guardando, guardado, error,
+    configuracion, usuarios, impresoras, cargando, guardando, guardado, error,
     guardarConfiguracion, crearUsuario, editarUsuario, eliminarUsuario,
   } = useConfiguracion()
 
@@ -149,7 +189,12 @@ export default function ConfiguracionPage() {
                     <ConfigField label="Carpeta base Escrituras" value={cfg.vb_carpeta ?? ""} onChange={set("vb_carpeta")} />
                     <ConfigField label="Carpeta salida planillas" value={cfg.vb_salida ?? ""} onChange={set("vb_salida")} />
                     <ConfigField label="IP de la impresora en red (ej: 192.168.1.100)" value={cfg.ip_impresora ?? ""} onChange={set("ip_impresora")} />
-                    <ConfigField label="Nombre impresora en Windows (ej: RICOH IM 550 PCL 6)" value={cfg.nombre_impresora ?? ""} onChange={set("nombre_impresora")} />
+                    <SelectField
+                      label="Impresora"
+                      value={cfg.nombre_impresora ?? ""}
+                      onChange={set("nombre_impresora")}
+                      opciones={impresoras}
+                    />
                   </ModuleCard>
 
                   <ModuleCard icon={FileSignature} label="Envío Firma Electrónica">
