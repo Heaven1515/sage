@@ -516,19 +516,37 @@ def _extraer_clausulas_formateado(doc: Document) -> str:
     Extrae las cláusulas del párrafo de cuerpo de un documento ya formateado.
     Las cláusulas están entre 'exponen: ' y la primera aparición de 'LA PERSONERÍA'.
     El texto ya está transformado (números en letras), no requiere conversión.
+
+    Maneja el caso en que el cuerpo esté partido en múltiples párrafos por un
+    salto de párrafo manual en Word (Enter accidental), concatenando todos los
+    fragmentos hasta encontrar 'LA PERSONERÍA'.
     """
-    for p in doc.paragraphs:
-        texto = p.text
+    parrafos = [p.text for p in doc.paragraphs]
+
+    for i, texto in enumerate(parrafos):
         # Acepta tanto "exponen: " (varios comparecientes) como "expone: " (uno solo)
         m = re.search(r'exponen?\s*:\s*', texto, re.IGNORECASE)
         if not m:
             continue
-        resto = texto[m.end():]
-        fin1 = resto.upper().find("LA PERSONERÍA")
-        fin2 = resto.upper().find("PERSONERÍAS:")
+
+        # Captura desde "exponen:" en el párrafo donde se encontró
+        fragmentos = [texto[m.end():]]
+
+        # Si el cuerpo fue partido con Enter en Word, agrega los párrafos siguientes
+        # hasta encontrar LA PERSONERÍA (en documentos normales este bucle no agrega nada
+        # porque LA PERSONERÍA está en el mismo párrafo)
+        for siguiente in parrafos[i + 1:]:
+            fragmentos.append(siguiente)
+            if "LA PERSONERÍA" in siguiente.upper() or "PERSONERÍAS:" in siguiente.upper():
+                break
+
+        cuerpo_completo = " ".join(fragmentos)
+        fin1 = cuerpo_completo.upper().find("LA PERSONERÍA")
+        fin2 = cuerpo_completo.upper().find("PERSONERÍAS:")
         candidatos = [f for f in [fin1, fin2] if f != -1]
         fin = min(candidatos) if candidatos else -1
-        return resto[:fin].strip() if fin != -1 else resto.strip()
+        return cuerpo_completo[:fin].strip() if fin != -1 else cuerpo_completo.strip()
+
     raise ValueError("No se encontró el cuerpo de cláusulas en el documento formateado.")
 
 

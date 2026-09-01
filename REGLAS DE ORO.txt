@@ -244,18 +244,27 @@ XIV.  CIERRE DE SESIÓN — RESPALDO Y GIT OBLIGATORIOS
 
   SI ADEMÁS QUIERES PUBLICAR UNA NUEVA VERSIÓN (nuevo instalador):
 
-    PRIMERO seguir el orden del Mandamiento XII (compilar backend,
-    copiar exe, pnpm tauri build). Luego:
+    FLUJO CORRECTO — GitHub Actions construye en la nube:
 
-      git add .
-      git commit -m "descripción de los cambios"
-      git push
-      git tag vX.Y.Z          ← ej: v5.0.1 (subir el último número)
-      git push origin vX.Y.Z
+      Paso 1: Subir el código y el número de versión
+        git add .
+        git commit -m "descripción de los cambios"
+        git push
 
-    GitHub Actions construye y publica el instalador solo.
-    El PC de oficina detecta la nueva versión al abrir SAGE
-    y pregunta si actualizar — sin instalar nada manualmente.
+      Paso 2: Crear el tag — esto dispara el build automático
+        git tag vX.Y.Z          ← ej: v5.2.8 (subir el último número)
+        git push origin vX.Y.Z
+
+      Paso 3: GitHub Actions detecta el tag y construye el instalador
+              automáticamente en la nube (sin hacer nada localmente).
+
+      Paso 4: El PC de oficina detecta la nueva versión al abrir SAGE
+              y se actualiza solo — sin instalar nada manualmente.
+
+    IMPORTANTE: NO es necesario compilar PyInstaller ni pnpm tauri build
+    localmente para publicar una versión. GitHub Actions hace todo eso.
+    El Mandamiento XII (compilar local) aplica solo cuando se quiere
+    probar el instalador en el mismo PC antes de publicar.
 
     REGLA de versiones: X.Y.Z
       X = cambio mayor (rediseño completo)
