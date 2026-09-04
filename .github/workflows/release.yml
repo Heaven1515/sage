@@ -64,10 +64,12 @@ jobs:
           node-version: '20'
 
       - name: Instalar pnpm
-        run: npm install -g pnpm
+        run: npm install -g pnpm@10
 
       - name: Instalar dependencias frontend
-        run: pnpm install
+        run: |
+          cd frontend
+          pnpm install
 
       # ── 5. Configurar Rust ─────────────────────────────────────────────────
       - name: Configurar Rust
