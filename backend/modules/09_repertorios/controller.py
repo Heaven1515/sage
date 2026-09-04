@@ -160,6 +160,9 @@ def parsear_planilla(archivo_bytes: bytes) -> list[ItemRepertorio]:
         _CLIENTES_VALIDOS = {"ROMERO Y ASOCIADOS SERVICIOS PROFESIONALES", "BANCO DE CHILE"}
         cliente_notaria = _cliente_raw if _cliente_raw in _CLIENTES_VALIDOS else None
 
+        # Col A: número de OT del banco (float como 19425.0 → int)
+        numero_ot = int(fila[0]) if fila[0] else None
+
         items.append(ItemRepertorio(
             wf=wf,
             repertorio=repertorio,
@@ -170,6 +173,7 @@ def parsear_planilla(archivo_bytes: bytes) -> list[ItemRepertorio]:
             materia=materia,
             rut=rut,
             cliente_notaria=cliente_notaria,
+            numero_ot=numero_ot,
         ))
 
     if not items:

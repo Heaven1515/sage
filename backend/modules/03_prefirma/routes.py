@@ -1,5 +1,5 @@
 """
-Endpoints FastAPI del módulo Prefirma (flujo manual asistido).
+Endpoints FastAPI del módulo Renombrado para Firma (ex-Prefirma).
 """
 
 import logging
@@ -15,7 +15,6 @@ from .schema import (
     ArchivoItem,
     CarpetaRespuesta,
     DatosRepertorio,
-    EnviarRequest,
     LogItem,
     PreviewRespuesta,
     RegistroManualRequest,
@@ -78,26 +77,6 @@ def registro_manual(req: RegistroManualRequest, db: Session = Depends(obtener_db
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
 
-
-@router.post("/enviar", response_model=LogItem)
-def enviar(req: EnviarRequest, db: Session = Depends(obtener_db)):
-    """
-    Envía el formulario al servidor de la notaría, elimina el archivo
-    y registra el resultado en el historial.
-    """
-    try:
-        return controller.enviar_y_registrar(
-            nombre_archivo = req.nombre_archivo,
-            repertorio     = req.repertorio,
-            anho           = req.anho,
-            tipo_contrato  = req.tipo_contrato,
-            fecha_dia      = req.fecha_dia,
-            fecha_mes      = req.fecha_mes,
-            fecha_anio     = req.fecha_anio,
-            db             = db,
-        )
-    except (FileNotFoundError, RuntimeError) as exc:
-        raise HTTPException(status_code=400, detail=str(exc))
 
 
 @router.get("/logs", response_model=list[LogItem])

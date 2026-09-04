@@ -169,6 +169,8 @@ def indexar_sesion(
         mes            = (planilla or {}).get("mes")
         # Col F de la planilla: quién encargó el alzamiento
         cliente_notaria = (planilla or {}).get("cliente_notaria") or None
+        # Col A de la planilla: número de OT del banco
+        numero_ot       = (planilla or {}).get("numero_ot") or None
 
         fecha_escritura = (
             f"{dia:02d}-{mes:02d}-{anio}" if dia and mes and anio else fecha_str
@@ -208,6 +210,7 @@ def indexar_sesion(
             existente.fecha_escritura = fecha_escritura or existente.fecha_escritura
             existente.cliente_notaria = cliente_notaria or existente.cliente_notaria
             existente.es_banlegal     = es_banlegal or existente.es_banlegal
+            existente.numero_ot       = numero_ot or existente.numero_ot
             contadores["actualizados"] += 1
         else:
             db.add(VBRegistro(
@@ -222,6 +225,7 @@ def indexar_sesion(
                 fecha_escritura = fecha_escritura,
                 cliente_notaria = cliente_notaria,
                 es_banlegal     = es_banlegal,
+                numero_ot       = numero_ot,
                 usuario_id      = usuario_id,
             ))
             contadores["indexados"] += 1
@@ -289,6 +293,7 @@ def listar_registros(
             firma_electronica=r.firma_electronica,
             cliente_notaria=r.cliente_notaria,
             es_banlegal=r.es_banlegal,
+            numero_ot=r.numero_ot,
         )
         for r in registros
     ]

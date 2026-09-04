@@ -1,49 +1,23 @@
 """
-Orquesta el módulo Prefirma (flujo manual asistido):
+Orquesta el módulo Renombrado para Firma (ex-Prefirma):
   1. Seleccionar carpeta del escáner (tkinter, persiste en BD)
-  2. Listar PDFs disponibles en esa carpeta
-  3. Generar preview de un PDF seleccionado
-  4. Buscar datos del repertorio en vb_registro
-  5. Enviar formulario al servidor de la notaría y registrar resultado
+  2. Vigilar carpeta automáticamente — renombra PDFs al detectarlos
+  3. Log en tiempo real de renombrados y errores
 """
 
 import importlib
 import logging
 import os
-import random
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from . import formulario_controller, lector_controller, preview_controller, vigilador_controller
+from . import lector_controller, preview_controller, vigilador_controller
 from .model import PrefirmaConfig, PrefirmaLog
 from .schema import ArchivoItem, CarpetaRespuesta, DatosRepertorio, LogItem, PreviewRespuesta, RegistroManualRequest
 
 
-def _sin_tildes(texto: str) -> str:
-    import unicodedata
-    return "".join(
-        c for c in unicodedata.normalize("NFD", texto)
-        if unicodedata.category(c) != "Mn"
-    )
-
 logger = logging.getLogger(__name__)
-
-
-def _es_modo_demo(db: Session) -> bool:
-    """Consulta si el modo demo está activo en la configuración global."""
-    cfg_mod = importlib.import_module("modules.07_configuracion.controller")
-    return cfg_mod.es_modo_demo(db)
-
-
-# Archivos ficticios para el modo demo (simulan PDFs escaneados)
-_DEMO_ARCHIVOS = [
-    "20260523091500001.pdf",
-    "20260523093000002.pdf",
-    "20260523094500003.pdf",
-    "20260523100000004.pdf",
-    "20260523101500005.pdf",
-]
 
 
 # ── Carpeta del escáner ───────────────────────────────────────────────────────
@@ -85,24 +59,7 @@ def obtener_carpeta(db: Session) -> CarpetaRespuesta:
 # ── Listado de archivos ───────────────────────────────────────────────────────
 
 def listar_archivos(db: Session) -> list[ArchivoItem]:
-    """
-    Lista todos los PDFs en la carpeta configurada.
-    En modo demo: retorna archivos ficticios sin acceder al disco.
-    """
-    if _es_modo_demo(db):
-        # Excluir archivos que ya se "enviaron" hoy (están en el log con estado 'ok')
-        from datetime import date
-        from sqlalchemy import func
-        hoy = date.today().isoformat()
-        enviados = {
-            r.nombre_archivo for r in
-            db.query(PrefirmaLog.nombre_archivo)
-            .filter(PrefirmaLog.estado == "ok", func.date(PrefirmaLog.fecha_procesado) == hoy)
-            .all()
-        }
-        pendientes = [n for n in _DEMO_ARCHIVOS if n not in enviados]
-        return [ArchivoItem(nombre=n) for n in pendientes]
-
+    """Lista todos los PDFs pendientes (sin renombrar) en la carpeta configurada."""
     config = _obtener_o_crear_config(db)
     if not config.ruta_carpeta:
         return []
@@ -121,128 +78,18 @@ def listar_archivos(db: Session) -> list[ArchivoItem]:
 # ── Lectura OCR del PDF ───────────────────────────────────────────────────────
 
 def leer_pdf(nombre_archivo: str, db: Session) -> dict:
-    """
-    Aplica OCR a la primera página del PDF y retorna:
-      - numero: número de repertorio (str) o None
-      - anho:   año del repertorio (str) o None
-      - tipo_contrato: título de la escritura (str) o None
-    En modo demo: retorna datos ficticios basados en vb_registro.
-    """
-    if _es_modo_demo(db):
-        return _leer_pdf_demo(nombre_archivo, db)
-
+    """Aplica OCR a la primera página del PDF y retorna número de repertorio y año."""
     ruta = _ruta_pdf(nombre_archivo, db)
     return lector_controller.extraer_datos_pdf(str(ruta))
-
-
-def _leer_pdf_demo(nombre_archivo: str, db: Session) -> dict:
-    """Simula OCR retornando un repertorio que exista en vb_registro."""
-    VBRegistro = importlib.import_module("modules.09_repertorios.registro_model").VBRegistro
-    from datetime import date
-    hoy = date.today()
-
-    # Buscar un repertorio del mes actual que tenga datos completos
-    registros = (
-        db.query(VBRegistro)
-        .filter(VBRegistro.mes == hoy.month, VBRegistro.anio == hoy.year, VBRegistro.repertorio.isnot(None))
-        .limit(20)
-        .all()
-    )
-    if registros:
-        # Asignar un repertorio distinto según el índice del archivo
-        idx = _DEMO_ARCHIVOS.index(nombre_archivo) if nombre_archivo in _DEMO_ARCHIVOS else 0
-        reg = registros[idx % len(registros)]
-        return {
-            "numero": reg.repertorio,
-            "anho": str(reg.anio),
-            "tipo_contrato": _sin_tildes(reg.materia or "ALZAMIENTO DE HIPOTECA Y PROHIBICION"),
-        }
-
-    return {
-        "numero": "3000",
-        "anho": str(hoy.year),
-        "tipo_contrato": "ALZAMIENTO DE HIPOTECA Y PROHIBICION",
-    }
 
 
 # ── Preview del PDF ───────────────────────────────────────────────────────────
 
 def obtener_preview(nombre_archivo: str, db: Session) -> PreviewRespuesta:
-    """
-    Renderiza todas las páginas del PDF seleccionado.
-    En modo demo: genera una imagen placeholder con texto descriptivo.
-    """
-    if _es_modo_demo(db):
-        return _preview_demo(nombre_archivo, db)
-
+    """Renderiza las páginas del PDF como imágenes base64 JPEG."""
     ruta = _ruta_pdf(nombre_archivo, db)
     imagenes = preview_controller.obtener_imagenes_pdf(str(ruta))
     return PreviewRespuesta(imagenes=imagenes)
-
-
-def _preview_demo(nombre_archivo: str, db: Session) -> PreviewRespuesta:
-    """Genera una imagen placeholder para el modo demo."""
-    import base64
-    import io
-
-    # Obtener datos del repertorio para mostrar info realista
-    datos_ocr = _leer_pdf_demo(nombre_archivo, db)
-    rep = datos_ocr.get("numero", "3000")
-    anho = datos_ocr.get("anho", "2026")
-    tipo = datos_ocr.get("tipo_contrato", "ALZAMIENTO")
-
-    # Buscar datos del cliente en vb_registro
-    VBRegistro = importlib.import_module("modules.09_repertorios.registro_model").VBRegistro
-    reg = (
-        db.query(VBRegistro)
-        .filter(VBRegistro.repertorio == rep, VBRegistro.anio == int(anho))
-        .first()
-    )
-    nombre_cliente = reg.nombre_cliente if reg else "CLIENTE DEMO"
-    comuna = reg.comuna if reg else "SANTIAGO"
-
-    try:
-        from PIL import Image, ImageDraw, ImageFont
-        # Crear imagen que simula una escritura escaneada
-        img = Image.new("RGB", (595, 842), "#FFFFFF")
-        draw = ImageDraw.Draw(img)
-
-        # Encabezado
-        draw.rectangle([0, 0, 595, 80], fill="#1565c0")
-        draw.text((297, 25), "ESCRITURA PÚBLICA", fill="white", anchor="mt")
-        draw.text((297, 50), f"Repertorio N° {rep}-{anho}", fill="white", anchor="mt")
-
-        # Contenido
-        y = 120
-        lineas = [
-            f"TIPO: {tipo}",
-            f"",
-            f"COMPARECIENTE:",
-            f"  {nombre_cliente}",
-            f"",
-            f"CONSERVADOR DE BIENES RAÍCES DE {comuna}",
-            f"",
-            f"En Santiago de Chile, a veintitrés de mayo",
-            f"de dos mil veintiséis, ante mí,",
-            f"CAROLINA ELIZABETH PIÑA CUEVAS,",
-            f"Notario Público, Titular de la 33ª Notaría",
-            f"de Santiago...",
-            f"",
-            f"[DOCUMENTO DE DEMOSTRACIÓN]",
-        ]
-        for linea in lineas:
-            draw.text((40, y), linea, fill="#333333")
-            y += 22
-
-        buf = io.BytesIO()
-        img.save(buf, format="JPEG", quality=85)
-        img_b64 = base64.b64encode(buf.getvalue()).decode()
-        return PreviewRespuesta(imagenes=[img_b64])
-
-    except ImportError:
-        # Si Pillow no está disponible, retornar lista vacía
-        logger.warning("Pillow no disponible para preview demo")
-        return PreviewRespuesta(imagenes=[])
 
 
 # ── Búsqueda en vb_registro ───────────────────────────────────────────────────
@@ -355,75 +202,6 @@ def registrar_manual(datos: RegistroManualRequest, db: Session) -> DatosRepertor
     )
 
 
-# ── Envío del formulario ──────────────────────────────────────────────────────
-
-def enviar_y_registrar(
-    nombre_archivo: str,
-    repertorio:     str,
-    anho:           str,
-    tipo_contrato:  str,
-    fecha_dia:      int,
-    fecha_mes:      int,
-    fecha_anio:     int,
-    db:             Session,
-) -> LogItem:
-    """
-    Flujo completo para un PDF que el usuario aprobó:
-      1. Crea log con estado 'procesando'
-      2. Envía al formulario web de la notaría
-      3. Elimina el archivo
-      4. Actualiza log a 'ok' (o 'error' si algo falla)
-    En modo demo: registra como 'ok' sin enviar ni borrar.
-    """
-    demo = _es_modo_demo(db)
-
-    log = PrefirmaLog(
-        nombre_archivo  = nombre_archivo,
-        repertorio      = repertorio,
-        anho_repertorio = anho,
-        tipo_contrato   = tipo_contrato,
-        estado          = "procesando",
-    )
-    db.add(log)
-    db.commit()
-
-    if demo:
-        # Modo demo: simular envío exitoso sin tocar archivos ni red
-        import time
-        time.sleep(0.5)  # breve pausa para que se vea natural
-        log.estado = "ok"
-        db.commit()
-        db.refresh(log)
-        logger.info("DEMO | PDF simulado como enviado: %s (rep %s-%s)", nombre_archivo, repertorio, anho)
-        return LogItem.model_validate(log)
-
-    ruta   = _ruta_pdf(nombre_archivo, db)
-    config = _obtener_o_crear_config(db)
-    try:
-        formulario_controller.enviar_formulario(
-            ruta_pdf      = str(ruta),
-            numero        = repertorio,
-            anho          = anho,
-            tipo_contrato = tipo_contrato,
-            fecha_dia     = fecha_dia,
-            fecha_mes     = fecha_mes,
-            fecha_anio    = fecha_anio,
-            url           = config.url_formulario or None,
-        )
-        os.remove(ruta)
-        log.estado = "ok"
-        db.commit()
-        logger.info("PDF enviado y eliminado: %s", nombre_archivo)
-
-    except Exception as exc:
-        log.estado        = "error"
-        log.mensaje_error = str(exc)
-        db.commit()
-        logger.error("Error enviando %s: %s", nombre_archivo, exc)
-
-    db.refresh(log)
-    return LogItem.model_validate(log)
-
 
 # ── Historial ─────────────────────────────────────────────────────────────────
 
@@ -472,83 +250,71 @@ def _ruta_pdf(nombre_archivo: str, db: Session) -> Path:
 
 def _callback_auto(ruta_pdf_str: str) -> None:
     """
-    Callback del vigilador: procesa un PDF automáticamente.
-      1. OCR → extrae repertorio, año, tipo contrato
-      2. Busca en vb_registro → obtiene materia + fecha_escritura
-      3. Si lo encuentra: envía al formulario, elimina PDF, log 'ok'
-      4. Si no lo encuentra: log 'sin_datos', deja el archivo para proceso manual
+    Callback del vigilador: renombra un PDF automáticamente.
+      1. OCR → extrae número de repertorio
+      2. Busca en vb_registro → obtiene el número de OT
+      3. Si lo encuentra: renombra a REPERTORIOZZZZ-OTXXXX.pdf, log 'ok'
+      4. Si OCR falla: log 'error', el archivo queda intacto
+      5. Si el repertorio no está en BD: log 'sin_datos', el archivo queda intacto
     """
     from database import SesionLocal
-    import importlib
 
     nombre = Path(ruta_pdf_str).name
+    carpeta = Path(ruta_pdf_str).parent
     db     = SesionLocal()
     log    = None
     try:
-        # 1. OCR
+        # 1. OCR — solo necesitamos el número de repertorio
         datos  = lector_controller.extraer_datos_pdf(ruta_pdf_str)
         numero = datos.get("numero")
         anho   = datos.get("anho")
-        tipo_ocr = datos.get("tipo_contrato")
 
-        if not numero or not anho:
-            log = PrefirmaLog(nombre_archivo=nombre, estado="error",
-                              mensaje_error="OCR: repertorio no detectado en el PDF")
+        if not numero:
+            log = PrefirmaLog(
+                nombre_archivo=nombre, estado="error",
+                mensaje_error="OCR: repertorio no detectado en el PDF",
+            )
             db.add(log); db.commit()
-            logger.warning("AUTO | OCR sin repertorio: %s", nombre)
+            logger.warning("RENOMBRAR | OCR sin repertorio: %s", nombre)
             return
 
-        # 2. Buscar en vb_registro
+        # 2. Buscar en vb_registro por repertorio para obtener el OT
         VBRegistro = importlib.import_module("modules.09_repertorios.registro_model").VBRegistro
-        fila = (db.query(VBRegistro)
-                .filter(VBRegistro.repertorio == numero, VBRegistro.anio == int(anho))
-                .first())
+        consulta = db.query(VBRegistro).filter(VBRegistro.repertorio == numero)
+        if anho:
+            consulta = consulta.filter(VBRegistro.anio == int(anho))
+        fila = consulta.first()
 
-        if fila is None:
-            log = PrefirmaLog(nombre_archivo=nombre, repertorio=numero,
-                              anho_repertorio=anho, tipo_contrato=tipo_ocr,
-                              estado="sin_datos",
-                              mensaje_error=f"Repertorio {numero}-{anho} no en vb_registro — procesar manual")
+        if fila is None or fila.numero_ot is None:
+            motivo = (
+                f"Repertorio {numero} no encontrado en BD"
+                if fila is None
+                else f"Repertorio {numero} sin OT registrado — indexar planilla primero"
+            )
+            log = PrefirmaLog(
+                nombre_archivo=nombre, repertorio=numero,
+                anho_repertorio=anho, estado="sin_datos",
+                mensaje_error=motivo,
+            )
             db.add(log); db.commit()
-            logger.warning("AUTO | Sin datos BD: %s-%s (%s)", numero, anho, nombre)
+            logger.warning("RENOMBRAR | %s: %s", nombre, motivo)
             return
 
-        # 3. Obtener fecha de escritura
-        partes = (fila.fecha_escritura or "").split("-")
-        if len(partes) != 3:
-            log = PrefirmaLog(nombre_archivo=nombre, repertorio=numero,
-                              anho_repertorio=anho, estado="error",
-                              mensaje_error="Sin fecha de escritura en vb_registro")
-            db.add(log); db.commit()
-            return
+        # 3. Construir nombre nuevo y renombrar en la misma carpeta
+        nombre_nuevo = f"REPERTORIO{numero}-OT{fila.numero_ot}.pdf"
+        ruta_nueva   = carpeta / nombre_nuevo
+        os.rename(ruta_pdf_str, str(ruta_nueva))
 
-        dia, mes, anio_fecha = int(partes[0]), int(partes[1]), int(partes[2])
-        tipo_final = _sin_tildes(fila.materia or tipo_ocr or "")
-        config     = _obtener_o_crear_config(db)
-
-        # 4. Crear log y enviar formulario
-        log = PrefirmaLog(nombre_archivo=nombre, repertorio=numero,
-                          anho_repertorio=anho, tipo_contrato=tipo_final,
-                          estado="procesando")
-        db.add(log); db.commit()
-
-        formulario_controller.enviar_formulario(
-            ruta_pdf      = ruta_pdf_str,
-            numero        = numero,
-            anho          = anho,
-            tipo_contrato = tipo_final,
-            fecha_dia     = dia,
-            fecha_mes     = mes,
-            fecha_anio    = anio_fecha,
-            url           = config.url_formulario or None,
+        log = PrefirmaLog(
+            nombre_archivo=nombre, repertorio=numero,
+            anho_repertorio=anho, estado="ok",
+            nombre_nuevo=nombre_nuevo,
         )
-        os.remove(ruta_pdf_str)
-        log.estado = "ok"
-        db.commit()
-        logger.info("AUTO | OK: %s (repertorio %s-%s)", nombre, numero, anho)
+        db.add(log); db.commit()
+        logger.info("RENOMBRAR | OK: %s → %s", nombre, nombre_nuevo)
 
     except Exception as exc:
-        logger.error("AUTO | Error procesando %s: %s", nombre, exc)
+        logger.error("RENOMBRAR | Error procesando %s: %s", nombre, exc)
         if log:
             log.estado        = "error"
             log.mensaje_error = str(exc)
@@ -607,4 +373,4 @@ def estado_modo_auto(db: Session) -> dict:
         func.date(PrefirmaLog.fecha_procesado) == hoy,
     ).count()
 
-    return {"activo": activo, "total_ok": total_ok, "total_errores": total_errores}
+    return {"activo": activo, "total_renombrados": total_ok, "total_errores": total_errores}

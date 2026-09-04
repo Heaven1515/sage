@@ -18,6 +18,7 @@ class ItemRepertorio(BaseModel):
     materia: str
     rut: str | None = None            # extraído del campo Compareciente de la planilla
     cliente_notaria: str | None = None  # col F de la planilla: "ROMERO Y ASOCIADOS..." o "BANCO DE CHILE"
+    numero_ot: int | None = None       # col A de la planilla: número de OT del banco
 
 
 class ResultadoItem(BaseModel):

@@ -186,7 +186,7 @@ with engine.connect() as _conn:
         _conn.commit()
         logger.info("Migración aplicada: boveda_registro.usuario_id")
 
-    # Migración: es_manual y es_banlegal en prefirma_log
+    # Migración: es_manual, es_banlegal y nombre_nuevo en prefirma_log
     _cols_prefirma_log = [row[1] for row in _conn.execute(_text("PRAGMA table_info(prefirma_log)"))]
     if "es_manual" not in _cols_prefirma_log:
         _conn.execute(_text("ALTER TABLE prefirma_log ADD COLUMN es_manual BOOLEAN NOT NULL DEFAULT 0"))
@@ -196,6 +196,17 @@ with engine.connect() as _conn:
         _conn.execute(_text("ALTER TABLE prefirma_log ADD COLUMN es_banlegal BOOLEAN NOT NULL DEFAULT 0"))
         _conn.commit()
         logger.info("Migración aplicada: prefirma_log.es_banlegal")
+    if "nombre_nuevo" not in _cols_prefirma_log:
+        _conn.execute(_text("ALTER TABLE prefirma_log ADD COLUMN nombre_nuevo TEXT"))
+        _conn.commit()
+        logger.info("Migración aplicada: prefirma_log.nombre_nuevo")
+
+    # Migración: numero_ot en vb_registro (OT del banco para renombrar PDFs)
+    _cols_registro = [row[1] for row in _conn.execute(_text("PRAGMA table_info(vb_registro)"))]
+    if "numero_ot" not in _cols_registro:
+        _conn.execute(_text("ALTER TABLE vb_registro ADD COLUMN numero_ot INTEGER"))
+        _conn.commit()
+        logger.info("Migración aplicada: vb_registro.numero_ot")
 
     # Migración: quitar UNIQUE de wf en vb_registro (RECs tienen mismo WF, distinto repertorio)
     _indices_registro = [row[1] for row in _conn.execute(_text("PRAGMA index_list(vb_registro)"))]

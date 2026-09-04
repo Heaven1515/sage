@@ -56,7 +56,12 @@ class _HiloVigilador(threading.Thread):
     def _revisar_carpeta(self) -> None:
         """Lista la carpeta y encola los PDFs que no se hayan visto antes."""
         try:
-            archivos = {f for f in os.listdir(self._ruta) if f.lower().endswith(".pdf")}
+            # Excluye archivos ya renombrados (REPERTORIOZZZZ-OTXXXX.pdf)
+            # para evitar que el vigilador los vuelva a procesar.
+            archivos = {
+                f for f in os.listdir(self._ruta)
+                if f.lower().endswith(".pdf") and not f.upper().startswith("REPERTORIO")
+            }
         except OSError as exc:
             logger.warning("No se pudo leer la carpeta '%s': %s", self._ruta, exc)
             return

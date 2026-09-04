@@ -1,42 +1,32 @@
 "use client"
 
 /*
-  Página: Prefirma
-  Módulo 03 — Envío manual asistido de escrituras escaneadas al formulario interno.
+  Página: Renombrado para Firma
+  Módulo 03 — Renombra automáticamente los PDFs escaneados usando OCR.
 
   Flujo:
-    1. Seleccionar carpeta del escáner
-    2. Clic en un PDF → vista previa + formulario
-    3. Ingresar / confirmar repertorio → el sistema busca materia en la BD
-    4. Clic en "Ingresar" → envío silencioso al servidor + archivo eliminado
+    1. Configurar carpeta del escáner (misma de siempre)
+    2. Activar modo automático
+    3. Cada PDF que llega al escáner → OCR extrae repertorio → busca OT en BD
+       → renombra a REPERTORIOZZZZ-OTXXXX.pdf
+    4. Log en pantalla muestra resultado de cada archivo
 */
 
 import { FileSignature } from "lucide-react"
-import { AppShell }         from "@/components/dashboard/app-shell"
-import { ListaArchivos }    from "@/components/prefirma/ListaArchivos"
-import { VisorPDF }         from "@/components/prefirma/VisorPDF"
-import { PanelControl }     from "@/components/prefirma/PanelControl"
-import { PanelLogs }        from "@/components/prefirma/PanelLogs"
-import { usePrefirma }      from "@/hooks/usePrefirma"
+import { AppShell }      from "@/components/dashboard/app-shell"
+import { PanelControl }  from "@/components/prefirma/PanelControl"
+import { PanelLogs }     from "@/components/prefirma/PanelLogs"
+import { usePrefirma }   from "@/hooks/usePrefirma"
 
 export default function PrefirmaPage() {
   const {
-    rutaCarpeta, seleccionarCarpeta, cargarArchivos,
-    archivos, cargandoArchivos, archivoActual, seleccionarArchivo,
-    imagenes, cargandoPreview,
-    fecha, setFecha,
-    repertorio, setRepertorio,
-    anho, setAnho,
-    tipoContrato, setTipoContrato,
-    datosRep, buscandoRep, buscarRepertorio,
-    mostrarModalManual, setMostrarModalManual, registrarManual,
-    enviando, enviar, error,
+    rutaCarpeta, seleccionarCarpeta,
     estadoAuto, cargandoAuto, iniciarAuto, detenerAuto,
-    logs,
+    logs, error,
   } = usePrefirma()
 
   return (
-    <AppShell activeItem="Envío Firma Electrónica">
+    <AppShell activeItem="Renombrado para Firma">
       <div className="p-6">
 
         {/* Título */}
@@ -45,8 +35,12 @@ export default function PrefirmaPage() {
             <FileSignature size={20} className="text-[var(--accent)]" />
           </div>
           <div>
-            <h1 className="text-2xl font-black text-[#111827]">Envío Firma Electrónica</h1>
-            <p className="text-sm text-[#6B7280] mt-0.5">Generación de Copias para Formulario Interno</p>
+            <h1 className="text-2xl font-black text-[#111827]">Renombrado para Firma</h1>
+            <p className="text-sm text-[#6B7280] mt-0.5">
+              {rutaCarpeta
+                ? <span className="font-mono text-xs">{rutaCarpeta}</span>
+                : "Configura la carpeta del escáner para comenzar"}
+            </p>
           </div>
         </div>
 
@@ -59,42 +53,18 @@ export default function PrefirmaPage() {
           onDetener = {detenerAuto}
         />
 
-        {/* Panel de logs del modo automático */}
-        <PanelLogs logs={logs} />
+        {/* Botón cambiar carpeta */}
+        <div className="mb-5">
+          <button
+            onClick={seleccionarCarpeta}
+            className="text-xs text-[#6B7280] hover:text-[var(--accent)] underline underline-offset-2 transition-colors"
+          >
+            {rutaCarpeta ? "Cambiar carpeta del escáner" : "Seleccionar carpeta del escáner"}
+          </button>
+        </div>
 
-        <VisorPDF
-          archivoActual    = {archivoActual}
-          imagenes         = {imagenes}
-          cargandoPreview  = {cargandoPreview}
-          fecha            = {fecha}
-          setFecha         = {setFecha}
-          repertorio       = {repertorio}
-          setRepertorio    = {setRepertorio}
-          anho             = {anho}
-          setAnho          = {setAnho}
-          tipoContrato     = {tipoContrato}
-          setTipoContrato  = {setTipoContrato}
-          datosRep         = {datosRep}
-          buscandoRep      = {buscandoRep}
-          onBuscarRep      = {buscarRepertorio}
-          enviando              = {enviando}
-          onEnviar              = {enviar}
-          error                 = {error}
-          mostrarModalManual    = {mostrarModalManual}
-          setMostrarModalManual = {setMostrarModalManual}
-          onRegistrarManual     = {registrarManual}
-          panelInferior    = {
-            <ListaArchivos
-              rutaCarpeta      = {rutaCarpeta}
-              archivos         = {archivos}
-              cargando         = {cargandoArchivos}
-              archivoActual    = {archivoActual}
-              onSeleccionar    = {seleccionarArchivo}
-              onCambiarCarpeta = {seleccionarCarpeta}
-              onActualizar     = {cargarArchivos}
-            />
-          }
-        />
+        {/* Log de operaciones */}
+        <PanelLogs logs={logs} />
 
       </div>
     </AppShell>

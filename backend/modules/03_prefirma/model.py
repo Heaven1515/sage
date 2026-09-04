@@ -47,3 +47,5 @@ class PrefirmaLog(Base):
     fecha_procesado = Column(DateTime, nullable=False, default=datetime.utcnow)
     es_manual       = Column(Boolean, nullable=False, default=False, server_default="0")
     es_banlegal     = Column(Boolean, nullable=False, default=False, server_default="0")
+    # Nombre resultante tras el renombrado: "REPERTORIOZZZZ-OTXXXX.pdf"
+    nombre_nuevo    = Column(String, nullable=True)

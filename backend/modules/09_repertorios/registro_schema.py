@@ -26,6 +26,7 @@ class RegistroItem(BaseModel):
     mes: int | None
     cliente_notaria: str | None
     es_banlegal: bool = False
+    numero_ot: int | None = None
 
 
 class ResultadoIndexar(BaseModel):

@@ -15,7 +15,7 @@ const navItems = [
   { label: "Redacción de Escrituras",       icon: FileEdit,        href: "/confecciones" },
   { label: "Registro",                      icon: CheckSquare,     href: "/vb" },
   { label: "Toma de Repertorios",           icon: BookOpen,        href: "/repertorios" },
-  { label: "Envío Firma Electrónica",       icon: FileSignature,   href: "/prefirma" },
+  { label: "Renombrado para Firma",          icon: FileSignature,   href: "/prefirma" },
   { label: "Postfirma",                     icon: Stamp,           href: "/postfirma" },
   { label: "Custodia de Documentos",        icon: Archive,         href: "/boveda" },
 ]

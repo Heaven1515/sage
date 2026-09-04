@@ -34,9 +34,9 @@ function BadgeEstado({ estado }: { estado: string }) {
     sin_datos: "bg-yellow-100 text-yellow-700",
   }
   const etiquetas: Record<string, string> = {
-    ok:        "Enviado",
+    ok:        "Renombrado",
     error:     "Error",
-    sin_datos: "Sin datos",
+    sin_datos: "Sin OT",
   }
   return (
     <span className={`text-[10px] font-semibold rounded-full px-2 py-0.5 ${estilos[estado] ?? "bg-gray-100 text-gray-500"}`}>
@@ -106,7 +106,7 @@ export function PanelLogs({ logs }: Props) {
             <table className="w-full text-xs">
               <thead>
                 <tr className="bg-[#F4F6F8] border-b border-gray-100">
-                  {["Hora", "Archivo", "Repertorio", "Estado", "Detalle"].map(col => (
+                  {["Hora", "Archivo original", "Repertorio", "Estado", "Nombre nuevo / Error"].map(col => (
                     <th key={col} className="text-left font-semibold text-[#6B7280] px-4 py-2.5 uppercase tracking-wide">
                       {col}
                     </th>
@@ -130,8 +130,11 @@ export function PanelLogs({ logs }: Props) {
                     <td className="px-4 py-2.5">
                       <BadgeEstado estado={log.estado} />
                     </td>
-                    <td className="px-4 py-2.5 text-[#6B7280] max-w-[300px]">
-                      {log.mensaje_error ?? <span className="text-[#9CA3AF]">—</span>}
+                    <td className="px-4 py-2.5 text-[#374151] max-w-[320px] font-mono text-[11px]">
+                      {log.estado === "ok"
+                        ? (log.nombre_nuevo ?? <span className="text-[#9CA3AF]">—</span>)
+                        : (log.mensaje_error ?? <span className="text-[#9CA3AF]">—</span>)
+                      }
                     </td>
                   </tr>
                 ))}

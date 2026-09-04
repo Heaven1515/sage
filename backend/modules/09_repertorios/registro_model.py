@@ -58,6 +58,10 @@ class VBRegistro(Base):
     # Indica si la escritura es de tipo BANLEGAL (prenda sobre vehículo)
     es_banlegal = Column(Boolean, nullable=False, default=False, server_default="0")
 
+    # Número de OT del banco — viene de la col A de la planilla Consulta OT
+    # Lo usa el módulo Prefirma para renombrar el PDF escaneado
+    numero_ot = Column(Integer, nullable=True)
+
     # Campos que completa el módulo Postfirma
     numero_caratula = Column(String, nullable=True)
     firma_electronica = Column(String, nullable=True)

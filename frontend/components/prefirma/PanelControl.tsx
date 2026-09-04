@@ -61,8 +61,8 @@ export function PanelControl({ estado, cargando, error, onIniciar, onDetener }: 
         {estado && (
           <div className="flex gap-6 ml-auto">
             <div className="text-center">
-              <p className="text-xl font-bold text-green-600">{estado.total_ok}</p>
-              <p className="text-xs text-[#6B7280]">Subidos hoy</p>
+              <p className="text-xl font-bold text-green-600">{estado.total_renombrados}</p>
+              <p className="text-xs text-[#6B7280]">Renombrados hoy</p>
             </div>
             <div className="text-center">
               <p className="text-xl font-bold text-red-500">{estado.total_errores}</p>

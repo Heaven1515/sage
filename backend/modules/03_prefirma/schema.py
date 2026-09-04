@@ -46,29 +46,19 @@ class RegistroManualRequest(BaseModel):
     es_banlegal:     bool = False
 
 
-class EnviarRequest(BaseModel):
-    """Payload que envía el frontend para procesar y subir un PDF."""
-    nombre_archivo: str
-    repertorio:     str   # solo el número, ej: "3090"
-    anho:           str   # ej: "2026"
-    tipo_contrato:  str
-    fecha_dia:      int
-    fecha_mes:      int
-    fecha_anio:     int
-
-
 class LogItem(BaseModel):
-    """Entrada del historial: un PDF procesado y su resultado."""
+    """Entrada del historial: un PDF detectado y su resultado de renombrado."""
     id:              int
     nombre_archivo:  str
     repertorio:      Optional[str] = None
     anho_repertorio: Optional[str] = None
     tipo_contrato:   Optional[str] = None
-    estado:          str             # 'procesando' | 'ok' | 'error'
+    estado:          str             # 'ok' | 'error' | 'sin_datos'
     mensaje_error:   Optional[str] = None
     fecha_procesado: datetime
     es_manual:       bool = False
     es_banlegal:     bool = False
+    nombre_nuevo:    Optional[str] = None  # nombre resultante tras renombrar
 
     class Config:
         from_attributes = True
