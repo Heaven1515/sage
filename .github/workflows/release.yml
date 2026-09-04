@@ -67,9 +67,7 @@ jobs:
         run: npm install -g pnpm
 
       - name: Instalar dependencias frontend
-        run: |
-          cd frontend
-          pnpm install
+        run: pnpm install
 
       # ── 5. Configurar Rust ─────────────────────────────────────────────────
       - name: Configurar Rust
