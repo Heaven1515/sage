@@ -102,6 +102,7 @@ export function useVBRegistro() {
         materia: item.materia,
         rut: item.rut,
         cliente_notaria: item.clienteNotaria,
+        numero_ot: item.numeroOt,
       }))
 
       const sesion = obtenerSesion()

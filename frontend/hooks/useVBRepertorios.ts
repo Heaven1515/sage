@@ -25,6 +25,7 @@ export interface ItemRepertorio {
   materia: string
   rut: string | null
   clienteNotaria: string | null
+  numeroOt: number | null
 }
 
 export interface ResultadoItem {
@@ -65,6 +66,7 @@ function mapearItem(d: Record<string, unknown>): ItemRepertorio {
     materia: d.materia as string,
     rut: (d.rut as string | null) ?? null,
     clienteNotaria: (d.cliente_notaria as string | null) ?? null,
+    numeroOt: (d.numero_ot as number | null) ?? null,
   }
 }
 
@@ -211,6 +213,7 @@ export function useVBRepertorios() {
         mes: item.mes,
         nombre_cliente: item.nombreCliente,
         materia: item.materia,
+        numero_ot: item.numeroOt,
       }))
       // Si se indica carpeta, enviarla como query param para que el backend busque ahí
       const params = nombreCarpeta ? `?nombre_carpeta=${encodeURIComponent(nombreCarpeta)}` : ""
