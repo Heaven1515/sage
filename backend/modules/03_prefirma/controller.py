@@ -301,7 +301,7 @@ def _callback_auto(ruta_pdf_str: str) -> None:
             return
 
         # 3. Construir nombre nuevo y renombrar en la misma carpeta
-        nombre_nuevo = f"REPERTORIO{numero}-OT{fila.numero_ot}.pdf"
+        nombre_nuevo = f"REP{numero}-OT{fila.numero_ot}.pdf"
         ruta_nueva   = carpeta / nombre_nuevo
         os.rename(ruta_pdf_str, str(ruta_nueva))
 

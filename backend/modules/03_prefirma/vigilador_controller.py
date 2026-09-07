@@ -60,7 +60,7 @@ class _HiloVigilador(threading.Thread):
             # para evitar que el vigilador los vuelva a procesar.
             archivos = {
                 f for f in os.listdir(self._ruta)
-                if f.lower().endswith(".pdf") and not f.upper().startswith("REPERTORIO")
+                if f.lower().endswith(".pdf") and not f.upper().startswith("REP")
             }
         except OSError as exc:
             logger.warning("No se pudo leer la carpeta '%s': %s", self._ruta, exc)
