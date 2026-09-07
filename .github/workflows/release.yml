@@ -67,9 +67,7 @@ jobs:
         run: npm install -g pnpm@10
 
       - name: Instalar dependencias frontend
-        run: |
-          cd frontend
-          pnpm install
+        run: pnpm install
 
       # ── 5. Configurar Rust ─────────────────────────────────────────────────
       - name: Configurar Rust
@@ -92,7 +90,7 @@ jobs:
         working-directory: frontend
         shell: pwsh
         run: |
-          $tauri = "$env:GITHUB_WORKSPACE\frontend\node_modules\.bin\tauri.cmd"
+          $tauri = "$env:GITHUB_WORKSPACE\node_modules\.bin\tauri.cmd"
           & $tauri build
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
