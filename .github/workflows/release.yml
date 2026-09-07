@@ -87,22 +87,26 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('frontend/src-tauri/Cargo.lock') }}
 
       # ── 6. Construir y publicar con Tauri ──────────────────────────────────
+      # CARGO_TARGET_DIR sobreescribe el valor de .cargo/config.toml (que apunta
+      # a AppData/Roaming/sage-rust-target en la máquina de desarrollo) para que
+      # los bundles queden en frontend/src-tauri/target en CI.
       - name: Build Tauri
         working-directory: frontend
         run: npx tauri build
         env:
+          CARGO_TARGET_DIR: ${{ github.workspace }}\frontend\src-tauri\target
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
+      # Tauri v2 + NSIS genera _setup.exe y _setup.exe.sig (no .nsis.zip).
       - name: Publicar release y latest.json
         shell: pwsh
         run: |
           $tag     = "${{ github.ref_name }}"
           $version = $tag.TrimStart('v')
           $nsis    = "frontend\src-tauri\target\release\bundle\nsis"
-          $zip     = "$nsis\SAGE_${version}_x64-setup.nsis.zip"
-          $sig     = "$nsis\SAGE_${version}_x64-setup.nsis.zip.sig"
           $exe     = "$nsis\SAGE_${version}_x64-setup.exe"
+          $sig     = "$nsis\SAGE_${version}_x64-setup.exe.sig"
 
           # Generar latest.json para el auto-updater
           $signature = (Get-Content $sig -Raw).Trim()
@@ -113,14 +117,14 @@ jobs:
             platforms = [ordered]@{
               "windows-x86_64" = [ordered]@{
                 signature = $signature
-                url = "https://github.com/Heaven1515/sage/releases/download/$tag/SAGE_${version}_x64-setup.nsis.zip"
+                url = "https://github.com/Heaven1515/sage/releases/download/$tag/SAGE_${version}_x64-setup.exe"
               }
             }
           } | ConvertTo-Json -Depth 5
           $latest | Out-File -FilePath "latest.json" -Encoding utf8NoBOM
 
-          # Crear release y subir todos los assets de una vez
-          gh release create $tag $exe $zip $sig "latest.json" `
+          # Crear release y subir assets
+          gh release create $tag $exe $sig "latest.json" `
             --title "SAGE $tag" `
             --notes "Nueva versión de SAGE. Descarga el instalador y ejecuta para actualizar."
         env:
