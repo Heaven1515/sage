@@ -68,8 +68,8 @@ jobs:
 
       - name: Instalar dependencias frontend
         run: |
+          cd frontend
           pnpm install
-          echo "${{ github.workspace }}/node_modules/.bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       # ── 5. Configurar Rust ─────────────────────────────────────────────────
       - name: Configurar Rust
@@ -90,7 +90,8 @@ jobs:
       # donde node_modules no existe. Llamamos al binario directamente.
       - name: Build Tauri
         working-directory: frontend
-        run: pnpm exec tauri build
+        shell: pwsh
+        run: & "${{ github.workspace }}\frontend\node_modules\.bin\tauri.cmd" build
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
