@@ -90,6 +90,7 @@ jobs:
       # donde node_modules no existe. Llamamos al binario directamente.
       - name: Build Tauri
         working-directory: frontend
+        shell: cmd
         run: ..\node_modules\.bin\tauri.cmd build
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
