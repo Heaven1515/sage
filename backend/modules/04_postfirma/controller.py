@@ -39,11 +39,8 @@ logger = logging.getLogger(__name__)
 # Lista fija de correos de notificación para el JSON del CBR de Santiago
 _NOTIFICACIONES = [
     "gestoriabca@romeroyasociados.cl",
-    "alzamientos_bch@notariatorrealba.cl",
     "cfaundezr@bancochile.cl",
-    "gvpintob@bancochile.cl",
-    "sinostro@bancochile.cl",
-    "ylagos@bancochile.cl",
+    "alzamientosbch@notaria33.cl",
 ]
 
 # Patrones para extraer datos de la página 1 del PDF
