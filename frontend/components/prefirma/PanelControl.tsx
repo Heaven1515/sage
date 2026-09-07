@@ -36,7 +36,7 @@ export function PanelControl({ estado, cargando, error, onIniciar, onDetener }: 
             className="flex items-center gap-2 bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
           >
             {cargando ? <Loader2 size={15} className="animate-spin" /> : <Play size={15} />}
-            Iniciar modo automático
+            Renombrar escáner
           </button>
         ) : (
           <button

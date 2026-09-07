@@ -128,16 +128,22 @@ _NOTARIOS: dict[str, dict] = {
     "suplente_1": {
         "nombre":        "BRENDA ANTONIA PÉREZ PINTO",
         "descripcion":   (
-            "chilena, divorciada, abogado, cédula nacional de identidad número "
+            "chilena, divorciada, abogada, cédula nacional de identidad número "
             "doce millones once mil cuatrocientos veintinueve guion ocho, "
-            "Notario Público Suplente de la interina de la Trigésima Tercera "
-            "Notaría de Santiago, doña CAROLINA E. PIÑA CUEVAS, según Decreto "
-            "Judicial ya protocolizado, con oficio en calle Huérfanos número "
-            "novecientos setenta y nueve, oficina setecientos doce, piso siete, de la Comuna "
-            "de Santiago"
+            "Notario Público Suplente de doña CAROLINA ELIZABETH PIÑA CUEVAS, "
+            "Notario Público Interino de la Trigésima Tercera Notaría de Santiago, "
+            "con oficio en calle Huérfanos número novecientos setenta y nueve, "
+            "oficina setecientos doce, comuna de Santiago, según Decreto número "
+            "trescientos ochenta y dos, año dos mil veintiséis de la Ilustrísima "
+            "Corte de Apelaciones de Santiago, y consta en Resolución Exenta número "
+            "mil veinticuatro año dos mil veintiséis del Ministerio de Justicia y "
+            "Derechos Humanos, debidamente protocolizado, al final de los Registros "
+            "del mes pertinente"
         ),
-        "header_nombre": "BRENDA ANTONIA PÉREZ PINTO",
-        "header_cargo":  "NOTARIO PÚBLICO SUPLENTE",
+        # El encabezado de páginas mantiene a Carolina (la notario titular).
+        # Brenda solo aparece en la comparecencia de la primera página.
+        "header_nombre": "CAROLINA E. PIÑA CUEVAS",
+        "header_cargo":  "NOTARIO PÚBLICO INTERINO",
         "header_oficio": "HUÉRFANOS 979 OF. 712 - SANTIAGO",
     },
     # suplente_2: agregar cuando haya datos disponibles

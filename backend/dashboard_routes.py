@@ -12,7 +12,7 @@ import importlib
 import logging
 from datetime import date
 from pathlib import Path
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File
 from fastapi.responses import JSONResponse, Response
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -20,6 +20,7 @@ from sqlalchemy.orm import Session
 from database import obtener_db
 from dashboard_controller import (
     generar_excel_informe_diario,
+    importar_ot_desde_excel,
     informe_diario_prefirma,
     obtener_resumen,
 )
@@ -96,22 +97,23 @@ def buscar_repertorio(q: str = Query(..., min_length=1), db: Session = Depends(o
         es_santiago = (reg.comuna or "").upper() == "SANTIAGO"
 
         return {
-            "encontrado":       True,
-            "wf":               reg.wf,
-            "nombre_cliente":   reg.nombre_cliente,
-            "rut":              reg.rut,
-            "comuna":           reg.comuna,
-            "materia":          reg.materia,
-            "repertorio":       reg.repertorio,
-            "anio":             reg.anio,
-            "fecha_escritura":  reg.fecha_escritura,
+            "encontrado":        True,
+            "wf":                reg.wf,
+            "nombre_cliente":    reg.nombre_cliente,
+            "rut":               reg.rut,
+            "comuna":            reg.comuna,
+            "materia":           reg.materia,
+            "repertorio":        reg.repertorio,
+            "anio":              reg.anio,
+            "fecha_escritura":   reg.fecha_escritura,
             "firma_electronica": reg.firma_electronica,
-            "numero_caratula":  reg.numero_caratula,
-            "es_santiago":      es_santiago,
-            "en_boveda":        entrada_boveda is not None,
-            "boveda_fecha":     str(entrada_boveda.fecha) if entrada_boveda else None,
-            "boveda_entrega":   entrada_boveda.numero_entrega if entrada_boveda else None,
-            "es_reingreso":     entrada_boveda.es_reingreso if entrada_boveda else False,
+            "numero_caratula":   reg.numero_caratula,
+            "numero_ot":         reg.numero_ot,
+            "es_santiago":       es_santiago,
+            "en_boveda":         entrada_boveda is not None,
+            "boveda_fecha":      str(entrada_boveda.fecha) if entrada_boveda else None,
+            "boveda_entrega":    entrada_boveda.numero_entrega if entrada_boveda else None,
+            "es_reingreso":      entrada_boveda.es_reingreso if entrada_boveda else False,
         }
     except Exception as exc:
         logger.error("Error en dashboard/buscar: %s", exc)
@@ -175,6 +177,26 @@ def post_excel_editado(body: ExcelDesdeEditadosInput):
     except Exception as exc:
         logger.error("Error generando Excel editado: %s", exc)
         return Response(content=b"", status_code=500)
+
+
+@router.post("/importar-ot")
+async def importar_ot(
+    archivo: UploadFile = File(...),
+    db: Session = Depends(obtener_db),
+):
+    """
+    Recibe el Excel 'Consulta OT' del banco y actualiza numero_ot en vb_registro
+    haciendo match por número de repertorio. No falla si un repertorio no existe.
+    """
+    try:
+        contenido = await archivo.read()
+        resultado = importar_ot_desde_excel(contenido, db)
+        return resultado
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        logger.error("Error importando OT: %s", e)
+        raise HTTPException(status_code=500, detail="Error interno al importar OT")
 
 
 @router.get("/resumen")

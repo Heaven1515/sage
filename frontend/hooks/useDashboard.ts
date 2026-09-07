@@ -56,12 +56,22 @@ export interface ResumenDashboard {
   anio_actual: number
 }
 
+export interface ResultadoImportarOT {
+  actualizados: number
+  creados:      number
+  omitidos:     number
+  total_filas:  number
+}
+
 // ── Hook ──────────────────────────────────────────────────────────────────────
 
 export function useDashboard() {
-  const [resumen,  setResumen]  = useState<ResumenDashboard | null>(null)
-  const [cargando, setCargando] = useState(true)
-  const [error,    setError]    = useState<string | null>(null)
+  const [resumen,         setResumen]         = useState<ResumenDashboard | null>(null)
+  const [cargando,        setCargando]        = useState(true)
+  const [error,           setError]           = useState<string | null>(null)
+  const [importandoOT,    setImportandoOT]    = useState(false)
+  const [resultadoOT,     setResultadoOT]     = useState<ResultadoImportarOT | null>(null)
+  const [errorOT,         setErrorOT]         = useState<string | null>(null)
 
   const cargar = useCallback(async () => {
     setCargando(true)
@@ -78,7 +88,32 @@ export function useDashboard() {
     }
   }, [])
 
+  // Sube el Excel 'Consulta OT' y actualiza numero_ot en vb_registro por repertorio
+  const importarOT = useCallback(async (archivo: File): Promise<void> => {
+    setImportandoOT(true)
+    setErrorOT(null)
+    setResultadoOT(null)
+    try {
+      const form = new FormData()
+      form.append("archivo", archivo)
+      const res  = await fetch("http://localhost:8000/dashboard/importar-ot", {
+        method: "POST",
+        body:   form,
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail ?? "Error al importar OT")
+      setResultadoOT(data as ResultadoImportarOT)
+    } catch (e) {
+      setErrorOT(e instanceof Error ? e.message : "Error desconocido")
+    } finally {
+      setImportandoOT(false)
+    }
+  }, [])
+
   useEffect(() => { cargar() }, [cargar])
 
-  return { resumen, cargando, error, recargar: cargar }
+  return {
+    resumen, cargando, error, recargar: cargar,
+    importarOT, importandoOT, resultadoOT, errorOT,
+  }
 }

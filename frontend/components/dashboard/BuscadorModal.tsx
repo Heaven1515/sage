@@ -85,6 +85,7 @@ export function BuscadorModal({ resultado, buscando, repertorio, onCerrar }: Pro
               {/* Grid de datos */}
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <Dato icono={<Hash size={13} />} label="WF" valor={resultado.wf} />
+                <Dato icono={<Hash size={13} />} label="OT" valor={resultado.numero_ot ? String(resultado.numero_ot) : null} />
                 <Dato icono={<MapPin size={13} />} label="Comuna"
                   valor={resultado.comuna}
                   colorValor={resultado.es_santiago ? "text-[var(--accent)] font-semibold" : "text-purple-600 font-semibold"}

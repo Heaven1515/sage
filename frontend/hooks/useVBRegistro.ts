@@ -49,6 +49,7 @@ export interface ItemRepertorioParaIndexar {
   materia: string
   rut: string | null
   clienteNotaria: string | null
+  numeroOt: number | null
 }
 
 // ── Hook principal ────────────────────────────────────────────────────────────

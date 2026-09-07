@@ -16,6 +16,7 @@ export interface ResultadoBusqueda {
   fecha_escritura?:  string
   firma_electronica?: string
   numero_caratula?:  string
+  numero_ot?:        number | null
   es_santiago?:      boolean
   en_boveda?:        boolean
   boveda_fecha?:     string

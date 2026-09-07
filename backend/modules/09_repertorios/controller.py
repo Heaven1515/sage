@@ -221,9 +221,23 @@ def _llenar_parrafo_fecha(parrafo, dia: int, mes: int) -> None:
             return
 
 
+def _llenar_parrafo_wf_ot(parrafos: list, numero_ot: int) -> None:
+    """
+    Busca el párrafo que empieza con 'WF ' y agrega ' OT {numero_ot}' al final.
+    Solo actúa si el párrafo aún no tiene OT (idempotente).
+    """
+    for p in parrafos:
+        texto = "".join(run.text for run in p.runs)
+        if texto.upper().startswith("WF ") and "OT " not in texto.upper():
+            if p.runs:
+                p.runs[-1].text = p.runs[-1].text.rstrip() + f" OT {numero_ot}"
+            return
+
+
 def _llenar_word(ruta_origen: Path, item: ItemRepertorio, ruta_destino: Path) -> None:
     """
-    Abre el Word, llena el repertorio en [0] y la fecha en el run con '____'.
+    Abre el Word, llena el repertorio en [0], la fecha en el run con '____'
+    y agrega la OT al lado del WF si está disponible.
     Guarda el resultado en ruta_destino (carpeta Completos).
     Lanza ValueError si no puede abrir o guardar el archivo.
     """
@@ -249,6 +263,10 @@ def _llenar_word(ruta_origen: Path, item: ItemRepertorio, ruta_destino: Path) ->
             "No se encontró el marcador '____' en '%s' — fecha no completada",
             ruta_origen.name,
         )
+
+    # Agregar OT al párrafo WF si la planilla trae número de OT
+    if item.numero_ot:
+        _llenar_parrafo_wf_ot(doc.paragraphs, item.numero_ot)
 
     try:
         doc.save(str(ruta_destino))

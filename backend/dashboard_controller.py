@@ -7,6 +7,7 @@ Funciones públicas:
   - obtener_resumen          → métricas diarias, mensuales, gráfico y notario del día
   - informe_diario_prefirma  → lista de operaciones procesadas en Prefirma hoy
   - generar_excel_informe_diario → Excel del informe diario
+  - importar_ot_desde_excel  → lee Excel 'Consulta OT' y actualiza numero_ot en vb_registro
 """
 
 import io
@@ -448,3 +449,141 @@ def _escribir_hoja_informe(ws, items: list[dict], titulo: str, color_hex: str) -
     tc.border    = Border(left=lado_azul, right=lado_azul,
                           top=lado_azul, bottom=lado_azul)
     ws.row_dimensions[tr].height = 20
+
+
+# ── Importar OT desde Excel ───────────────────────────────────────────────────
+
+def _extraer_nombre_rut_ot(compareciente: str) -> tuple[str, str | None]:
+    """
+    Extrae nombre del cliente y RUT del campo Compareciente del Excel OT.
+    Formato: 'BANCO DE CHILE  97.004.000-5\nNOMBRE CLIENTE  RUT'
+    """
+    if not compareciente:
+        return "", None
+    lineas = [l.strip() for l in compareciente.replace("\r\n", "\n").split("\n") if l.strip()]
+    if len(lineas) < 2:
+        return "", None
+    partes = lineas[1].rsplit("  ", 1)
+    if len(partes) > 1:
+        return partes[0].strip(), partes[1].strip()
+    return lineas[1].strip(), None
+
+
+def importar_ot_desde_excel(archivo_bytes: bytes, db: Session) -> dict:
+    """
+    Lee el Excel 'Consulta OT' del banco e inserta o actualiza registros en vb_registro.
+
+    Columnas relevantes (base 0):
+      0  → OT (float: 19425.0)
+      2  → Repertorio
+      3  → Fecha Repertorio (datetime)
+      5  → Cliente notaría ("ROMERO Y ASOCIADOS..." o "BANCO DE CHILE")
+      7  → Materia
+      8  → Compareciente (BANCO DE CHILE + nombre/RUT del cliente)
+      22 → Datos Adicionales ("Código de operación: XXXXXX" → WF)
+
+    Lógica:
+      - Busca en vb_registro por WF. Si existe → actualiza OT y repertorio.
+      - Si no existe → crea el registro con todos los datos disponibles del Excel.
+    """
+    import importlib
+    from datetime import datetime, date as date_type
+
+    try:
+        wb = openpyxl.load_workbook(io.BytesIO(archivo_bytes), data_only=True)
+    except Exception as e:
+        raise ValueError(f"No se pudo abrir el archivo Excel: {e}") from e
+
+    ws = wb.active
+    actualizados = 0
+    creados      = 0
+    omitidos     = 0
+    total_filas  = 0
+
+    VBRegistro = importlib.import_module("modules.09_repertorios.registro_model").VBRegistro
+
+    _CLIENTES_VALIDOS = {"ROMERO Y ASOCIADOS SERVICIOS PROFESIONALES", "BANCO DE CHILE"}
+
+    for fila in ws.iter_rows(min_row=2, values_only=True):
+        if not fila[0]:
+            continue
+        total_filas += 1
+
+        # WF desde Datos Adicionales (col 22)
+        datos_adicionales = str(fila[22]).strip() if fila[22] else ""
+        if ":" not in datos_adicionales:
+            omitidos += 1
+            continue
+        wf = datos_adicionales.split(":")[-1].strip()
+        if not wf or not wf.isdigit():
+            omitidos += 1
+            continue
+
+        numero_ot  = int(fila[0])
+        rep_raw    = fila[2]
+        repertorio = str(int(rep_raw)) if isinstance(rep_raw, float) else str(rep_raw).strip() if rep_raw else None
+        fecha_rep  = fila[3]
+
+        # Extraer componentes de la fecha
+        anio = mes = dia = None
+        if isinstance(fecha_rep, (datetime, date_type)):
+            anio, mes, dia = fecha_rep.year, fecha_rep.month, fecha_rep.day
+        elif fecha_rep:
+            try:
+                dt = datetime.fromisoformat(str(fecha_rep)[:10])
+                anio, mes, dia = dt.year, dt.month, dt.day
+            except ValueError:
+                pass
+
+        nombre_cliente, rut = _extraer_nombre_rut_ot(str(fila[8]) if fila[8] else "")
+        materia        = str(fila[7]).strip() if fila[7] else ""
+        cliente_raw    = str(fila[5]).strip() if fila[5] else ""
+        cliente_notaria = cliente_raw if cliente_raw in _CLIENTES_VALIDOS else None
+        es_banlegal     = (cliente_notaria == "BANCO DE CHILE")
+
+        fecha_escritura = (
+            f"{dia:02d}-{mes:02d}-{anio}" if dia and mes and anio else None
+        )
+
+        # Buscar por WF primero, luego por WF+repertorio
+        existente = db.query(VBRegistro).filter(VBRegistro.wf == wf).first()
+
+        if existente:
+            existente.numero_ot    = numero_ot
+            existente.repertorio   = repertorio or existente.repertorio
+            existente.anio         = anio or existente.anio
+            existente.mes          = mes or existente.mes
+            existente.cliente_notaria = cliente_notaria or existente.cliente_notaria
+            existente.es_banlegal  = es_banlegal or existente.es_banlegal
+            if fecha_escritura and not existente.fecha_escritura:
+                existente.fecha_escritura = fecha_escritura
+            actualizados += 1
+        else:
+            db.add(VBRegistro(
+                wf              = wf,
+                rut             = rut,
+                nombre_cliente  = nombre_cliente,
+                comuna          = "SANTIAGO",
+                materia         = materia,
+                repertorio      = repertorio,
+                anio            = anio,
+                mes             = mes,
+                fecha_escritura = fecha_escritura,
+                cliente_notaria = cliente_notaria,
+                es_banlegal     = es_banlegal,
+                numero_ot       = numero_ot,
+            ))
+            creados += 1
+
+    db.commit()
+
+    logger.info(
+        "Importar OT: %d actualizados, %d creados, %d omitidos, %d filas totales",
+        actualizados, creados, omitidos, total_filas,
+    )
+    return {
+        "actualizados": actualizados,
+        "creados":      creados,
+        "omitidos":     omitidos,
+        "total_filas":  total_filas,
+    }

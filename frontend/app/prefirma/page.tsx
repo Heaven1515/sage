@@ -12,7 +12,7 @@
     4. Log en pantalla muestra resultado de cada archivo
 */
 
-import { FileSignature } from "lucide-react"
+import { FileSignature, FolderOpen } from "lucide-react"
 import { AppShell }      from "@/components/dashboard/app-shell"
 import { PanelControl }  from "@/components/prefirma/PanelControl"
 import { PanelLogs }     from "@/components/prefirma/PanelLogs"
@@ -57,8 +57,9 @@ export default function PrefirmaPage() {
         <div className="mb-5">
           <button
             onClick={seleccionarCarpeta}
-            className="text-xs text-[#6B7280] hover:text-[var(--accent)] underline underline-offset-2 transition-colors"
+            className="flex items-center gap-2 text-sm bg-white border border-[#D1D5DB] text-[#374151] rounded-full px-4 py-1.5 font-medium hover:bg-[#F4F6F8] transition-colors"
           >
+            <FolderOpen size={14} />
             {rutaCarpeta ? "Cambiar carpeta del escáner" : "Seleccionar carpeta del escáner"}
           </button>
         </div>

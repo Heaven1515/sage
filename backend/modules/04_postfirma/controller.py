@@ -47,8 +47,14 @@ _NOTIFICACIONES = [
 ]
 
 # Patrones para extraer datos de la página 1 del PDF
-_RE_CERTIFICADO  = re.compile(r"Certificado Nro\s+([A-Za-z0-9]+)", re.IGNORECASE)
-_RE_REPERTORIO   = re.compile(r"Repertorio\s+(?:N[°oº?]|Nro)\s*:?\s*(\d+)\s*-\s*(\d+)", re.IGNORECASE)
+# Soporta formato antiguo "Certificado Nro XXXX" y nuevo "CVE: 147-XXXX"
+_RE_CERTIFICADO_OLD = re.compile(r"Certificado\s+Nro\s+([A-Za-z0-9]+)", re.IGNORECASE)
+_RE_CERTIFICADO_NEW = re.compile(r"CVE:\s*([A-Za-z0-9-]+)", re.IGNORECASE)
+# Formato antiguo: "Repertorio N° 1234 - 2026"
+_RE_REPERTORIO_OLD  = re.compile(r"Repertorio\s+(?:N[°oº?]|Nro)\s*:?\s*(\d+)\s*-\s*(\d+)", re.IGNORECASE)
+# Formato nuevo: "bajo el Repertorio 16684" (año se extrae de la fecha DD-MM-YYYY)
+_RE_REPERTORIO_NEW  = re.compile(r"Repertorio\s+(\d+)", re.IGNORECASE)
+_RE_FECHA_NUEVA     = re.compile(r"\b(\d{2})-(\d{2})-(\d{4})\b")   # DD-MM-YYYY → grupo 3 = año
 _RE_CONSERVADOR  = re.compile(
     r"Conservador\s+de\s+Bienes\s+Ra[ií]ces\s+de\s+([A-ZÁÉÍÓÚÑ][A-ZÁÉÍÓÚÑa-záéíóúñ ]+?)(?=[,.\n\r]|$)",
     re.IGNORECASE | re.MULTILINE,
@@ -435,26 +441,41 @@ def _procesar_un_pdf(ruta_pdf: Path, carpeta_dia: Path, db: Session) -> Resultad
 
 def _extraer_datos_pdf(ruta_pdf: Path) -> tuple[str, str, int, list[str], bool]:
     """
-    Lee el PDF completo y extrae N° certificado, N° repertorio, año,
+    Lee el PDF completo y extrae N° certificado/CVE, N° repertorio, año,
     lista de comunas del Conservador y flag BANLEGAL.
+    Soporta el formato antiguo ('Certificado Nro / Repertorio N° 1234 - 2026')
+    y el formato nuevo ('CVE: 147-xxx / bajo el Repertorio 16684').
     Lanza ValueError si no encuentra certificado o repertorio.
     """
     with pdfplumber.open(str(ruta_pdf)) as pdf:
         texto_p1   = pdf.pages[0].extract_text() or ""
         texto_todo = "\n".join(p.extract_text() or "" for p in pdf.pages)
 
-    m_cert = _RE_CERTIFICADO.search(texto_p1)
-    m_rep  = _RE_REPERTORIO.search(texto_p1)
-
+    # ── Certificado / CVE ────────────────────────────────────────────────────
+    m_cert = _RE_CERTIFICADO_OLD.search(texto_p1) or _RE_CERTIFICADO_NEW.search(texto_p1)
     if not m_cert:
-        raise ValueError("No se encontró 'Certificado Nro' en la página 1")
-    if not m_rep:
-        raise ValueError("No se encontró 'Repertorio N°' en la página 1")
+        raise ValueError("No se encontró 'Certificado Nro' ni 'CVE:' en la página 1")
+    certificado = m_cert.group(1)
 
-    # Detectar si es documento BANLEGAL (aparece en el encabezado del doc formateado)
+    # ── Repertorio + Año ─────────────────────────────────────────────────────
+    m_rep_old = _RE_REPERTORIO_OLD.search(texto_p1)
+    if m_rep_old:
+        # Formato antiguo incluye el año en el mismo patrón
+        repertorio = m_rep_old.group(1)
+        anio       = int(m_rep_old.group(2))
+    else:
+        m_rep_new = _RE_REPERTORIO_NEW.search(texto_p1)
+        if not m_rep_new:
+            raise ValueError("No se encontró número de repertorio en la página 1")
+        repertorio = m_rep_new.group(1)
+        # Extraer año de la fecha DD-MM-YYYY presente en la página 1
+        m_fecha = _RE_FECHA_NUEVA.search(texto_p1)
+        anio    = int(m_fecha.group(3)) if m_fecha else datetime.now().year
+
+    # ── BANLEGAL ─────────────────────────────────────────────────────────────
     es_banlegal = bool(re.search(r'\bBANLEGAL\b', texto_p1))
 
-    # Extraer todas las comunas del Conservador del documento completo (deduplicadas)
+    # ── Comunas del Conservador (solo se usan en escrituras de PRENDA) ───────
     seen: set[str] = set()
     comunas: list[str] = []
     for m in _RE_CONSERVADOR.finditer(texto_todo):
@@ -463,7 +484,7 @@ def _extraer_datos_pdf(ruta_pdf: Path) -> tuple[str, str, int, list[str], bool]:
             seen.add(c)
             comunas.append(c)
 
-    return m_cert.group(1), m_rep.group(1), int(m_rep.group(2)), comunas, es_banlegal
+    return certificado, repertorio, anio, comunas, es_banlegal
 
 
 def _buscar_en_registro(repertorio: str, anio: int, db: Session):

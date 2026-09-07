@@ -86,17 +86,44 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('frontend/src-tauri/Cargo.lock') }}
 
       # ── 6. Construir y publicar con Tauri ──────────────────────────────────
-      - name: Build y Release Tauri
-        uses: tauri-apps/tauri-action@v0
+      # Usamos pasos manuales en vez de tauri-action porque esa acción no
+      # encuentra el binario tauri en node_modules/.bin cuando corre en CI.
+      - name: Build Tauri
+        run: |
+          cd frontend
+          pnpm tauri build
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
-        with:
-          projectPath: frontend
-          tagName: ${{ github.ref_name }}
-          releaseName: 'SAGE v__VERSION__'
-          releaseBody: 'Nueva versión de SAGE. Descarga el instalador y ejecuta para actualizar.'
-          releaseDraft: false
-          prerelease: false
-          updaterJsonPreferNsis: true
+
+      - name: Publicar release y latest.json
+        shell: pwsh
+        run: |
+          $tag     = "${{ github.ref_name }}"
+          $version = $tag.TrimStart('v')
+          $nsis    = "frontend\src-tauri\target\release\bundle\nsis"
+          $zip     = "$nsis\SAGE_${version}_x64-setup.nsis.zip"
+          $sig     = "$nsis\SAGE_${version}_x64-setup.nsis.zip.sig"
+          $exe     = "$nsis\SAGE_${version}_x64-setup.exe"
+
+          # Generar latest.json para el auto-updater
+          $signature = (Get-Content $sig -Raw).Trim()
+          $latest = [ordered]@{
+            version  = $version
+            notes    = "Nueva versión de SAGE."
+            pub_date = (Get-Date -Format "yyyy-MM-ddTHH:mm:ssZ")
+            platforms = [ordered]@{
+              "windows-x86_64" = [ordered]@{
+                signature = $signature
+                url = "https://github.com/Heaven1515/sage/releases/download/$tag/SAGE_${version}_x64-setup.nsis.zip"
+              }
+            }
+          } | ConvertTo-Json -Depth 5
+          $latest | Out-File -FilePath "latest.json" -Encoding utf8NoBOM
+
+          # Crear release y subir todos los assets de una vez
+          gh release create $tag $exe $zip $sig "latest.json" `
+            --title "SAGE $tag" `
+            --notes "Nueva versión de SAGE. Descarga el instalador y ejecuta para actualizar."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
