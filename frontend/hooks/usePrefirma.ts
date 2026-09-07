@@ -38,6 +38,9 @@ export function usePrefirma() {
   // ── Logs ─────────────────────────────────────────────────────────────────
   const [logs, setLogs] = useState<LogItem[]>([])
 
+  // ── Renombrar todos ───────────────────────────────────────────────────────
+  const [renombrandoTodos, setRenombrandoTodos] = useState(false)
+
   // ── Error ─────────────────────────────────────────────────────────────────
   const [error, setError] = useState<string | null>(null)
 
@@ -131,9 +134,28 @@ export function usePrefirma() {
     }
   }, [])
 
+  const renombrarTodos = useCallback(async () => {
+    setRenombrandoTodos(true)
+    setError(null)
+    try {
+      const res  = await fetch(`${API}/renombrar-todos`, { method: "POST" })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.detail || "Error")
+      await cargarLogs()
+      await cargarEstadoAuto()
+      return data.procesados as number
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Error al renombrar")
+      return 0
+    } finally {
+      setRenombrandoTodos(false)
+    }
+  }, [cargarLogs, cargarEstadoAuto])
+
   return {
     rutaCarpeta, seleccionarCarpeta,
     estadoAuto, cargandoAuto, iniciarAuto, detenerAuto,
+    renombrarTodos, renombrandoTodos,
     logs, error,
   }
 }

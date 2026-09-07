@@ -6,18 +6,20 @@
   Muestra estado activo/detenido y los contadores de PDFs procesados hoy.
 */
 
-import { Loader2, Play, Square } from "lucide-react"
+import { Loader2, Play, Square, Zap } from "lucide-react"
 import type { EstadoSesion } from "@/hooks/usePrefirma"
 
 interface Props {
-  estado:    EstadoSesion | null
-  cargando:  boolean
-  error:     string | null
-  onIniciar: () => void
-  onDetener: () => void
+  estado:           EstadoSesion | null
+  cargando:         boolean
+  renombrando:      boolean
+  error:            string | null
+  onIniciar:        () => void
+  onDetener:        () => void
+  onRenombrarTodos: () => void
 }
 
-export function PanelControl({ estado, cargando, error, onIniciar, onDetener }: Props) {
+export function PanelControl({ estado, cargando, renombrando, error, onIniciar, onDetener, onRenombrarTodos }: Props) {
   const activo = estado?.activo ?? false
 
   return (
@@ -48,6 +50,16 @@ export function PanelControl({ estado, cargando, error, onIniciar, onDetener }: 
             Detener
           </button>
         )}
+
+        {/* Botón renombrar inmediato */}
+        <button
+          onClick={onRenombrarTodos}
+          disabled={renombrando || cargando}
+          className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600 text-white text-sm font-semibold px-4 py-2 rounded-lg disabled:opacity-50 transition-colors"
+        >
+          {renombrando ? <Loader2 size={15} className="animate-spin" /> : <Zap size={15} />}
+          Renombrar ahora
+        </button>
 
         {/* Badge de estado */}
         <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${

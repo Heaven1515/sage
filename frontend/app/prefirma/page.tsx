@@ -22,6 +22,7 @@ export default function PrefirmaPage() {
   const {
     rutaCarpeta, seleccionarCarpeta,
     estadoAuto, cargandoAuto, iniciarAuto, detenerAuto,
+    renombrarTodos, renombrandoTodos,
     logs, error,
   } = usePrefirma()
 
@@ -46,11 +47,13 @@ export default function PrefirmaPage() {
 
         {/* Panel modo automático */}
         <PanelControl
-          estado    = {estadoAuto}
-          cargando  = {cargandoAuto}
-          error     = {error}
-          onIniciar = {iniciarAuto}
-          onDetener = {detenerAuto}
+          estado           = {estadoAuto}
+          cargando         = {cargandoAuto}
+          renombrando      = {renombrandoTodos}
+          error            = {error}
+          onIniciar        = {iniciarAuto}
+          onDetener        = {detenerAuto}
+          onRenombrarTodos = {renombrarTodos}
         />
 
         {/* Botón cambiar carpeta */}

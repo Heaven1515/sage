@@ -329,6 +329,33 @@ def _callback_auto(ruta_pdf_str: str) -> None:
         db.close()
 
 
+def renombrar_todos(db: Session) -> dict:
+    """
+    Renombra de inmediato todos los PDFs pendientes en la carpeta del escáner.
+    No espera el ciclo del vigilador: procesa ahora los archivos que aún no
+    tienen el prefijo REP.
+    Retorna cuántos archivos intentó procesar.
+    """
+    config = _obtener_o_crear_config(db)
+    if not config.ruta_carpeta:
+        raise ValueError("No hay carpeta del escáner configurada")
+
+    carpeta = Path(config.ruta_carpeta)
+    try:
+        archivos = [
+            f for f in os.listdir(str(carpeta))
+            if f.lower().endswith(".pdf") and not f.upper().startswith("REP")
+        ]
+    except OSError as exc:
+        raise RuntimeError(f"No se pudo leer la carpeta: {exc}")
+
+    for nombre in archivos:
+        _callback_auto(str(carpeta / nombre))
+
+    logger.info("RENOMBRAR TODOS: %d PDFs procesados en %s", len(archivos), carpeta)
+    return {"procesados": len(archivos)}
+
+
 def iniciar_modo_auto(db: Session) -> dict:
     """Activa el vigilador de carpeta. Lanza ValueError si ya está activo."""
     config = _obtener_o_crear_config(db)

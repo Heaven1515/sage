@@ -85,6 +85,15 @@ def obtener_logs(db: Session = Depends(obtener_db)):
     return controller.obtener_logs(db)
 
 
+@router.post("/renombrar-todos")
+def renombrar_todos(db: Session = Depends(obtener_db)):
+    """Renombra inmediatamente todos los PDFs pendientes en la carpeta del escáner."""
+    try:
+        return controller.renombrar_todos(db)
+    except (ValueError, RuntimeError) as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+
 @router.post("/auto/iniciar")
 def iniciar_auto(db: Session = Depends(obtener_db)):
     """Activa el modo automático: vigila la carpeta y procesa PDFs al detectarlos."""
