@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "SAGE",
-  "version": "5.2.15",
+  "version": "5.2.16",
   "identifier": "cl.notaria33.sage",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "SAGE — Notaría 33",
+        "title": "SAGE \u2014 Notar\u00eda 33",
         "width": 1280,
         "height": 800,
         "minWidth": 1024,

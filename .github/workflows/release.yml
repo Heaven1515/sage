@@ -85,12 +85,12 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('frontend/src-tauri/Cargo.lock') }}
 
       # ── 6. Construir y publicar con Tauri ──────────────────────────────────
-      # Usamos pasos manuales en vez de tauri-action porque esa acción no
-      # encuentra el binario tauri en node_modules/.bin cuando corre en CI.
+      # pnpm tauri build falla porque el workspace instala el binario en la
+      # raíz (node_modules/.bin/tauri) pero el script se ejecuta desde frontend/
+      # donde node_modules no existe. Llamamos al binario directamente.
       - name: Build Tauri
-        run: |
-          cd frontend
-          pnpm tauri build
+        working-directory: frontend
+        run: ..\node_modules\.bin\tauri.cmd build
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
