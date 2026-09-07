@@ -8,6 +8,8 @@ token_*.json
 *.pem
 *.p12
 service_account*.json
+tauri-keys
+tauri-keys.pub
 
 # ── Bases de datos ─────────────────────────────────────────────────────────────
 *.db
@@ -19,6 +21,9 @@ service_account*.json
 # ── Datos de trabajo reales ────────────────────────────────────────────────────
 *.xlsx
 *.pdf
+*.docx
+*.traineddata
+*.log
 
 # ── Python ─────────────────────────────────────────────────────────────────────
 __pycache__/
