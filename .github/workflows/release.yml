@@ -66,8 +66,10 @@ jobs:
       - name: Instalar pnpm
         run: npm install -g pnpm@10
 
+      # pnpm detecta el workspace root (donde está pnpm-workspace.yaml) y
+      # siempre instala ahí. Instalamos desde la raíz del repo para que
+      # node_modules/.bin quede en $GITHUB_WORKSPACE/node_modules/.bin.
       - name: Instalar dependencias frontend
-        working-directory: frontend
         run: pnpm install --shamefully-hoist
 
       # ── 5. Configurar Rust ─────────────────────────────────────────────────
@@ -84,12 +86,14 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('frontend/src-tauri/Cargo.lock') }}
 
       # ── 6. Construir y publicar con Tauri ──────────────────────────────────
-      # pnpm tauri build falla porque el workspace instala el binario en la
-      # raíz (node_modules/.bin/tauri) pero el script se ejecuta desde frontend/
-      # donde node_modules no existe. Llamamos al binario directamente.
+      # Agrega el bin del workspace root al PATH para que "tauri" sea encontrado
+      # cuando pnpm corre el script desde frontend/ (donde no hay node_modules local).
       - name: Build Tauri
         working-directory: frontend
-        run: pnpm tauri build
+        shell: pwsh
+        run: |
+          $env:PATH = "${{ github.workspace }}\node_modules\.bin;" + $env:PATH
+          pnpm tauri build
         env:
           TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
