@@ -45,9 +45,11 @@ def _extraer_datos_word_vb(doc: Document) -> dict[str, str]:
     datos: dict[str, str] = {}
 
     # WF: primer párrafo que empieza con "WF " (insensible a mayúsculas)
+    # Solo se toma el primer token numérico — ignora " OT XXXXX" si llenar_words
+    # ya procesó el archivo y lo agregó al mismo párrafo.
     for texto in no_vacios:
         if texto.upper().startswith("WF "):
-            datos["wf"] = texto[3:].strip()
+            datos["wf"] = texto[3:].strip().split()[0]
             break
 
     # Nombre cliente: párrafo inmediatamente posterior al párrafo que solo dice "A"
